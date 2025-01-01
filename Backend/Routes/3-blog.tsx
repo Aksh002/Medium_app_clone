@@ -1,12 +1,15 @@
 import { Hono } from "hono";
 const Blog = new Hono();
 
-Blog.post('/signup', (c) => {
+Blog.post('/', (c) => {
     return c.text('Hello Hono!')
 })
 
+Blog.put('/', (c) => {
+    return c.text('Hello Hono!')
+})
 
-Blog.post('/signin', (c) => {
+Blog.get('/', (c) => {
     return c.text('Hello Hono!')
 })
 
