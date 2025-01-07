@@ -31,3 +31,4 @@ model Posts{
   author    Users    @relation(fields: [authorId],references: [id]) 
 
 }
+
