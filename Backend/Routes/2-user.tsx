@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 //  const User = new Hono();
-// const User = new Hono().basePath('/user')                                      // Another way routing, when app.route() not used
+// const User = new Hono().basePath('/user')                                      // Another way routing, when app.route('/', user), only with provided base are handled by it
 
 const User = new Hono<{ Bindings: { DATABASE_URL: string , JWT_SECRET: string}    // 
                     //  Variables: { prisma : PrismaClient }                      // Used for Prisma middleware         
@@ -21,6 +21,7 @@ import { hashPswd, verifyPswd } from "../hashPswdLogic";
 //   c.set("prisma",prisma as unknown as PrismaClient)
 //   next();
 // })
+// To access this use "const user = c.var.prisma.users.create()"
 
 const userSchema=z.object({
   email: z.string().email(),
