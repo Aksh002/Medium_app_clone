@@ -31,3 +31,6 @@ app.post('/api/v1', (c) => {
   return c.text('Hello Hono!')
 })
 export default app
+
+
+// THis BE is hosted on https://backend.akshitgangwar02.workers.dev

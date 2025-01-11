@@ -5,14 +5,13 @@
     "deploy": "wrangler deploy --minify"
   },
   "dependencies": {
+    "@akshit_gangwar/medium-common-v2": "^1.0.0",
     "@prisma/client": "^6.1.0",
     "@prisma/extension-accelerate": "^1.2.1",
-    "bcrypt": "^5.1.1",
     "hono": "^4.6.14"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241218.0",
-    "@types/bcrypt": "^5.0.2",
     "prisma": "^6.1.0",
     "wrangler": "^3.99.0"
   }

@@ -1,8 +1,10 @@
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
-import { z } from "zod";
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
+import { blogSchema } from "@akshit_gangwar/medium-common-v2/dist/sharedZod";
+import { blogUPDschema } from "@akshit_gangwar/medium-common-v2/dist/sharedZod"
+//import { blogUPDschema } from "@akshit_gangwar/medium-common/dist/sharedZod"
 
 const Blog = new Hono<{ 
                         Bindings: { DATABASE_URL: string , JWT_SECRET: string}, 
@@ -10,29 +12,49 @@ const Blog = new Hono<{
                     }>()
 
 //                                        Auth  MIDDLEWARE
-Blog.use('/*',async (c,next)=>{
-    const token=c.req.header("Authorization")
-    if (!token){
-        c.status(411)
-        return c.json("Unothorized")
+Blog.use('/*', async (c, next) => {
+    try {
+      // Extract the Authorization header
+      const token = c.req.header("Authorization");
+      if (!token) {
+        c.status(401); // 401 Unauthorized
+        return c.json({ error: "Unauthorized: Token missing" });
+      }
+  
+      // Extract the JWT part
+      const tokenPart = token.split(" ")[1];
+      if (!tokenPart) {
+        c.status(401); // 401 Unauthorized
+        return c.json({ error: "Unauthorized: Malformed token" });
+      }
+  
+      // Verify the JWT and handle potential errors
+      let payload;
+      try {
+        payload = await verify(tokenPart, c.env.JWT_SECRET);
+      } catch (err) {
+        // Handle verification errors gracefully
+        c.status(403); // 403 Forbidden
+        return c.json({ error: "Invalid or expired token, please log in again" });
+      }
+  
+      // Validate the payload structure
+      if (!payload || typeof payload.id !== 'string') {
+        c.status(400); // 400 Bad Request
+        return c.json({ error: "Invalid token payload" });
+      }
+  
+      // Set the userId in the context for the next middleware/route
+      c.set('userId', payload.id);
+      await next();
+    } catch (err) {
+      // Catch any unexpected errors and provide a user-friendly response
+      console.error("Unexpected error in middleware:", err);
+      c.status(500); // 500 Internal Server Error
+      return c.json({ error: "An unexpected error occurred, please try again later" });
     }
-
-    const tokenPart=token.split(" ")[1]
-    const payload=await verify(tokenPart,c.env.JWT_SECRET)
-    if (!payload){
-        c.status(411)
-        return c.json("Session Logged out, Log in again")
-    }
-
-    if (typeof payload.id !== 'string') {
-        c.status(400);
-        return c.json("Invalid token payload");
-    }
-    // To pass the extracted id frm the jwt into the main route, In Hono, we use            "SET/GET"
-    
-    c.set('userId',payload.id)
-    await next();
-})
+  });
+  
 
 //                                    Prisma MIDDLEWARE
 // Here we push the prisma client variable in context c, and acess through c.var.prisma
@@ -46,11 +68,7 @@ Blog.use('/*',async (c,next) => {
 })
 
 
-const blogSchema=z.object({
-    title: z.string().max(40),
-    subTitle: z.string().max(40).optional(),
-    content: z.string()
-})
+
 
  // Create the route to initialize a blog/post Solution
 Blog.post('/',async  (c) => {                    
@@ -67,9 +85,9 @@ Blog.post('/',async  (c) => {
     }
     const post =await c.var.prisma.posts.create({
         data:{
-            title: body.title,
-            subTitle: body.subTitle?body.subTitle:"",
-            content: body.content,
+            title: body.title?body.title:"....Empty....",
+            subTitle: body.subTitle?body.subTitle:"....Empty....",
+            content: body.content?body.content:"....Empty....",
             authorId: id
         }
     })
@@ -87,9 +105,14 @@ Blog.post('/',async  (c) => {
 
 Blog.post('/:id',async (c) => {
     const id=c.req.param('id')
-    const post= await c.var.prisma.posts.findFirst({
+    const userId= c.get('userId')
+    const post= await c.var.prisma.posts.update({
         where:{
-            id:id
+            id:id,
+            authorId:userId
+        },
+        data:{
+            published:true
         }
     })
     if (!post){
@@ -98,18 +121,11 @@ Blog.post('/:id',async (c) => {
             msg:"OOPs!!! You didnt saved any post here"
         })
     }
-    post.published=true;
     return c.json({
         msg:"Published"
     })
 })
 
-
-const blogUPDschema=z.object({
-    title: z.string().max(40).optional(),
-    subTitle: z.string().max(40).optional(),
-    content: z.string().optional()
-})
 
 // Updating all the posts
 Blog.put('/:id',async (c) => {
@@ -132,12 +148,12 @@ Blog.put('/:id',async (c) => {
     }
 
 
-    // if (old.published){
-    //     c.status(413)
-    //     return c.json({
-    //         msg:" You can not edit this Blog, It is Already Public"
-    //     })
-    // }
+    if (old.published){
+        c.status(413)
+        return c.json({
+            msg:" You can not edit this Blog, It is Already Public"
+        })
+    }
 
     const { success }= blogUPDschema.safeParse(body)
     if (!success){
@@ -166,8 +182,8 @@ Blog.put('/:id',async (c) => {
 })
 
 // Getting a post
-Blog.get('/:id',async (c) => {
-    const id= c.req.param('id')
+Blog.get('/',async (c) => {
+    const id= c.req.query('id')
 
     const post= await c.var.prisma.posts.findUnique({
         where:{
@@ -194,8 +210,12 @@ Blog.get('/:id',async (c) => {
 })
 
 // Getting all posts
-Blog.get('/',async (c) => {
-    const allPost= await c.var.prisma.posts.findMany({})
+Blog.get('/bulk',async (c) => {
+    const allPost= await c.var.prisma.posts.findMany({
+        where:{
+            published:true
+        }
+    })
     if (!allPost){
         return c.json({
             msg:"Nothing to see here"
@@ -209,11 +229,61 @@ Blog.get('/',async (c) => {
 
 // Planned routes
 
-Blog.get('/myPosts',async (c) => {
-    
+Blog.delete('/:id',async (c) => {
+    const id=c.req.param('id')
+    const userId=c.get('userId')
+    const post=await c.var.prisma.posts.delete({
+        where:{
+            id:id,
+            authorId:userId
+        }
+    })
+    if (!post){
+        c.status(400)
+        return c.json({
+            msg:"Post Couldnt be deleted"
+        })
+    }
+    return c.json({
+        msg:"Post Deleted Successfully"
+    })
 })
 
-Blog.get('/savedPosts',async (c) => {
-    
+Blog.get('/myPosts',async (c) => {
+    const  userId=c.get('userId')
+    const myPost= await c.var.prisma.posts.findMany({
+        where:{
+            published:true,
+            authorId:userId
+        }
+    })
+    if (!myPost){
+        return c.json({
+            msg:"Nothing to see here"
+        })
+    }
+    return c.json({
+        allPost:myPost
+    })
 })
+
+Blog.get('/drafts',async (c) => {
+    const  userId=c.get('userId')
+    const myPost= await c.var.prisma.posts.findMany({
+        where:{
+            published:false,
+            authorId:userId
+        }
+    })
+    if (!myPost){
+        return c.json({
+            msg:"Nothing to see here"
+        })
+    }
+    return c.json({
+        allPost:myPost
+    })
+})
+
+
 export default Blog;

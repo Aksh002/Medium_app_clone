@@ -10,7 +10,9 @@ import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
 import { sign,verify,decode } from "hono/jwt";
 import { z } from "zod";
-import { hashPswd, verifyPswd } from "../hashPswdLogic";
+import { generateSalt, hashPswd, verifyPswd } from "../hashPswdLogic";
+import { userSchema } from "@akshit_gangwar/medium-common-v2/dist/sharedZod";
+import { loginSchema } from "@akshit_gangwar/medium-common-v2/dist/sharedZod";
 
 //                                        Prisma MIDDLEWARE
 // User.use('*',async (c,next) => {
@@ -23,12 +25,6 @@ import { hashPswd, verifyPswd } from "../hashPswdLogic";
 // })
 // To access this use "const user = c.var.prisma.users.create()"
 
-const userSchema=z.object({
-  email: z.string().email(),
-  userName: z.string(),
-  firstName: z.string().optional(),
-  password: z.string().min(8)
-})
 
 User.post('/signup',async (c) => {
   const body= await c.req.json();
@@ -65,7 +61,7 @@ User.post('/signup',async (c) => {
   }
 
   // Hashing password
-  const hashPass :string= await hashPswd(body.password)
+  const hashPass :string=await hashPswd(body.password,generateSalt())
 
   // Creating User
   const user=await prisma.users.create({
@@ -91,10 +87,7 @@ User.post('/signup',async (c) => {
   })
 })
 
-const loginSchema=z.object({
-  email: z.string().email(),
-  password: z.string()
-})
+
 
 User.get('/signin',async (c) => {
   const body= await c.req.json();
@@ -123,7 +116,8 @@ User.get('/signin',async (c) => {
       msg:"No user found with the given Email"
     })
   }
-  if (!(await verifyPswd(body.password,user.hashPass))){
+  const check=await verifyPswd(user.hashPass,body.password)
+  if (!check){
     c.status(403)
     return c.json({
       msg:"Incorrect Password"
