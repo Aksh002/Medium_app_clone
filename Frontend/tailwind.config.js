@@ -8,6 +8,12 @@ export default {
     extend: {
       colors: {
         customColor: '#F7F4ED',
+        customYellow: '#f9ebce',
+        customGray: '#a9aeae',
+        customGray2: '#494a4b'
+      },
+      backgroundImage: {
+        'front-image': "url('./pages/test.png')",
       },
     },
   },

@@ -5,7 +5,7 @@ import { Topbar } from "../components/Topbar"
 export const FrontPage=()=>{
     return <div className="bg-customColor">
         <Topbar></Topbar>
-        <div className="pb-12">
+        <div className="pb-12 flex justify-between">
             <div className="ml-16 flex-col justify-start space-y-9">
                 <div className="text-9xl font-serif font-thin mt-40">
                     <div>Human </div>
