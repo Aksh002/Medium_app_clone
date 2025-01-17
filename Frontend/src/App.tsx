@@ -6,6 +6,7 @@ import { Blogs } from "./pages/Blogs"
 import { BrowserRouter,Route,Routes } from 'react-router-dom' 
 import { FrontPage } from './pages/FrontPage'
 import { Draft } from './pages/Draft'
+import { Blog } from './pages/Blog'
 
 function App() {
   //const [count, setCount] = useState(0)
@@ -19,6 +20,7 @@ function App() {
           <Route path='/signin' element={<Signin></Signin>} ></Route>
           <Route path='/blogs' element={<Blogs></Blogs>}></Route>
           <Route path='/draft' element={<Draft></Draft>}></Route>
+          <Route path='/blog' element={<Blog></Blog>}></Route>
         </Routes>
       </BrowserRouter>
     </div>

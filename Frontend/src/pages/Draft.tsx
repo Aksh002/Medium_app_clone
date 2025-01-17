@@ -9,8 +9,8 @@ export const Draft=()=>{
         <TopBar3></TopBar3>
         <div className="flex justify-center h-4/5" >
             <div className="bg-customYellow text-white mt-10 w-3/5 flex justify-start rounded-3xl space-x-2 px-6 py-6">
-                <div className="mt-2"><AddButton></AddButton></div>
-                <div className="flex-col space-y-4">
+                <div className="mt-2 invisible lg:visible"><AddButton></AddButton></div>
+                <div className="flex-col sm:space-y-4">
                     <div className="border-l-2 border-slate-400 h-16 font-serif font-semibold">
                         <BlogBox1 props={"Title"}></BlogBox1>
                     </div>
