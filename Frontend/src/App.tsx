@@ -7,10 +7,13 @@ import { BrowserRouter,Route,Routes } from 'react-router-dom'
 import { FrontPage } from './pages/FrontPage'
 import { Draft } from './pages/Draft'
 import { Blog } from './pages/Blog'
+import { useState } from 'react'
+
+
 
 function App() {
   //const [count, setCount] = useState(0)
-
+  // const { login,setLogin }=  useState(false)
   return (
     <div>
       <BrowserRouter>

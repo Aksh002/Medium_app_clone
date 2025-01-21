@@ -6,7 +6,7 @@ export const Signin=()=>{
     return <div>
         <div className="min-h-screen bg-customColor ">
             <Topbar></Topbar>
-            <div className="mt-16 mb-32">
+            <div className="mt-16 mb-16 sm:mb-32">
                 <Onboarding props={'Signin'}></Onboarding>
             </div>
             <BottomBar></BottomBar>

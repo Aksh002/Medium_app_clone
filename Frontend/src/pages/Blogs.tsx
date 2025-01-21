@@ -6,7 +6,7 @@ export const Blogs=()=>{
         <div>
             <TopBar2></TopBar2>
         </div>
-        <div>
+        <div className="mt-8">
             <BlogPrev></BlogPrev>
         </div>
     </div>
