@@ -4,7 +4,7 @@ import styled from 'styled-components';
 const Loader = () => {
   return (
     <StyledWrapper>
-      <button className='typewritter-button'>
+      <button className='typewritter-button' >
         <div className="typewriter">
           <div className="slide"><i /></div>
           <div className="paper" />

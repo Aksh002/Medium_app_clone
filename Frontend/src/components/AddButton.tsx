@@ -1,6 +1,6 @@
 export const AddButton=()=>{
     return <div>
-        <button title="Add New" className="group cursor-pointer outline-none hover:rotate-90 duration-300">
+        <button title="Add New" className="group cursor-pointer outline-none hover:rotate-90 duration-300 hidden md:block">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="50px"
