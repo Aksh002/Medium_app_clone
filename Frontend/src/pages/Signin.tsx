@@ -1,13 +1,13 @@
 import { BottomBar } from "../components/BottomBar"
-import { Onboarding } from "../components/Onboarding"
-import { Topbar } from "../components/Topbar"
+import { Onboarding1 } from "../components/Onboarding"
+import { Topbar1 } from "../components/Topbar"
 
 export const Signin=()=>{
     return <div>
         <div className="min-h-screen bg-customColor ">
-            <Topbar></Topbar>
+            <Topbar1 label={'Signin'}></Topbar1>
             <div className="mt-16 mb-16 sm:mb-32">
-                <Onboarding props={'Signin'}></Onboarding>
+                <Onboarding1 type={'Signin'}></Onboarding1>
             </div>
             <BottomBar></BottomBar>
         </div>        

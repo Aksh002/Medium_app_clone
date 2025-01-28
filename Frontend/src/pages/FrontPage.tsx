@@ -15,7 +15,7 @@ export const FrontPage=()=>{
     return(
     <div className={`relative ${isModelOpen ? "overflow-hidden" : ""}`}>
         <div className="bg-customColor h-screen">
-            <Topbar></Topbar>
+            <Topbar modelOpened={modelOpened} newUser={setNewUser}></Topbar>
             <div className="pb-12 flex justify-between mb-24 lg:mb-0">
                 <div className="ml-16 flex-col justify-start space-y-5 sm:space-y-9">
                     <div className="text-3xl sm:text-5xl lg:text-9xl  font-serif font-semibold sm:font-thin mt-40">

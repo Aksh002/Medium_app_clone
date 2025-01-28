@@ -8,6 +8,8 @@ import { FrontPage } from './pages/FrontPage'
 import { Draft } from './pages/Draft'
 import { Blog } from './pages/Blog'
 import { useState } from 'react'
+import { Membership } from './pages/Membership'
+import { AboutUs } from './pages/AboutUs'
 
 
 
@@ -24,6 +26,8 @@ function App() {
           <Route path='/blogs' element={<Blogs></Blogs>}></Route>
           <Route path='/draft' element={<Draft></Draft>}></Route>
           <Route path='/blog' element={<Blog></Blog>}></Route>
+          <Route path='/membership' element={<Membership></Membership>}></Route>
+          <Route path='/aboutUs' element={<AboutUs></AboutUs>}></Route>
         </Routes>
       </BrowserRouter>
     </div>
