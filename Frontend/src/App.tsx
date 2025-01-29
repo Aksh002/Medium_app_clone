@@ -7,9 +7,10 @@ import { BrowserRouter,Route,Routes } from 'react-router-dom'
 import { FrontPage } from './pages/FrontPage'
 import { Draft } from './pages/Draft'
 import { Blog } from './pages/Blog'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { Membership } from './pages/Membership'
 import { AboutUs } from './pages/AboutUs'
+import { RecoilRoot } from 'recoil'
 
 
 
@@ -18,18 +19,22 @@ function App() {
   // const { login,setLogin }=  useState(false)
   return (
     <div>
-      <BrowserRouter>
-        <Routes>
-          <Route path='/' element={<FrontPage></FrontPage>}></Route>
-          <Route path='/signup' element={<Signup></Signup>} ></Route>
-          <Route path='/signin' element={<Signin></Signin>} ></Route>
-          <Route path='/blogs' element={<Blogs></Blogs>}></Route>
-          <Route path='/draft' element={<Draft></Draft>}></Route>
-          <Route path='/blog' element={<Blog></Blog>}></Route>
-          <Route path='/membership' element={<Membership></Membership>}></Route>
-          <Route path='/aboutUs' element={<AboutUs></AboutUs>}></Route>
-        </Routes>
-      </BrowserRouter>
+      <RecoilRoot> {/* Wrap the entire app with RecoilRoot */}
+        <BrowserRouter>
+          <Suspense fallback={<div>Loading....</div>}>
+            <Routes>
+              <Route path='/' element={<FrontPage />} />
+              <Route path='/signup' element={<Signup />} />
+              <Route path='/signin' element={<Signin />} />
+              <Route path='/blogs' element={<Blogs />} />
+              <Route path='/draft' element={<Draft />} />
+              <Route path='/blog' element={<Blog />} />
+              <Route path='/membership' element={<Membership />} />
+              <Route path='/aboutUs' element={<AboutUs />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </RecoilRoot>
     </div>
   )
 }

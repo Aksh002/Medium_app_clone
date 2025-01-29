@@ -10,9 +10,10 @@ export const signupAtom = atom({
 })
 
 // export const signupSelector=selector({
-//     key:'loginSelector',
+//     key:'signupSelector',
 //     get:async ({get})=>{
-//         const loginDetail=get(signupAtom)
-//         const user = await axios.post()
+//         const signupDetail=get(signupAtom)
+//         const response = await axios.post(`https://backend.akshitgangwar02.workers.dev/api/v1/user/signup`,signupDetail)
+//         return response.data.token
 //     }
 // })

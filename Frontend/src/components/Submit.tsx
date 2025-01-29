@@ -2,11 +2,11 @@ import React from 'react';
 import { useSetRecoilState } from 'recoil';
 import styled from 'styled-components';
 
-const Submit = () => {
+const Submit = ({onClick}) => {
   //const setLogin=useSetRecoilState(loginAtom)
   return (
     <StyledWrapper>
-      <button className="button">
+      <button onClick={()=>onClick()} className="button">
         SUBMIT →
       </button>
     </StyledWrapper>

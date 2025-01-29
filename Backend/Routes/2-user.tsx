@@ -89,7 +89,7 @@ User.post('/signup',async (c) => {
 
 
 
-User.get('/signin',async (c) => {
+User.post('/signin',async (c) => {
   const body= await c.req.json();
 
   const { success }=loginSchema.safeParse(body)

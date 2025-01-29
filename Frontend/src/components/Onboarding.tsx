@@ -1,9 +1,11 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { InputBox } from "./InputBox"
 import { useState } from "react";
 import Submit from "./Submit";
-import { useSetRecoilState,useRecoilState } from "recoil";
-import { signupAtom } from "../atoms/loginAt";
+import { useSetRecoilState,useRecoilState, useRecoilValue } from "recoil";
+import { signupAtom,signupSelector } from "../atoms/signupAt";
+import { tokenAtom } from "../atoms/tokenAt"
+import axios from "axios";
 
 // interface Props{
 //     label:string;
@@ -19,21 +21,55 @@ export const Onboarding=({type,fxn}:Props)=>{
     const [password,setPassword]=useState("")
     const [userName,setUserName]=useState("")
     const [firstName,setFirstName]=useState("")
-
+    const [token,setToken]=useRecoilState(tokenAtom)
+    const [error,setError]=useState("")
     //const [signup,setSignup]=useRecoilState(signupAtom)
+    //const token:string=useRecoilValue(signupSelector)
 
-    return <div>
-        <div className="flex justify-center">
+    const navigate=useNavigate()
+    
+
+    const SubmitFxn=async ()=>{
+        
+        
+        try {
+            // Make the API request manually instead of using a selector
+            if (email!="" && password!="" && userName!="" && firstName!=""){
+                const response = await axios.post(
+                    "https://backend.akshitgangwar02.workers.dev/api/v1/user/signup",
+                    {
+                        email,
+                        userName,
+                        firstName,
+                        password
+                    }
+                );
+                if (response.data.token) {
+                    setToken(response.data.token);  // Store token in state
+                    localStorage.setItem("jwtToken", response.data.token);
+                    navigate("/Blogs");
+                }
+            }
+            else{
+                setError("A value is missing");
+            }            
+        } catch (err) {
+            setError(`Signup failed:${err}`)
+        }
+    }
+
+    return <div>{fxn?
+        (<div className="flex justify-center">
                 <div className="flex-col justify-center  p-10 sm:p-16 mb-3 mt-3 rounded-3xl  bg-gradient-to-b from-gray-700 via-gray-500 to-gray-400 border-black shadow-xl shadow-gray-400">
-                    <div className="font-serif text-lg sm:text-3xl flex justify-center text-white mb-3 sm:mb-6 font-normal sm:font-medium  rounded-lg">{type=='Signin'?<span>WELCOME!!</span>:<span>JOIN US</span>}</div>
+                    <div className="font-serif text-lg sm:text-3xl flex justify-center text-white mb-3 sm:mb-6 font-normal sm:font-medium  rounded-lg">{type==='Signin'?<span>WELCOME!!</span>:<span>JOIN US</span>}</div>
                     <div className="ml-2 space-y-3 sm:space-y-3">
                         <InputBox set={setEmail} label="Email"></InputBox>
-                        {type=='Signin'?<div></div>:<InputBox set={setUserName} label={"User Name"}></InputBox>}
+                        {type==='Signin'?<div></div>:<InputBox set={setUserName} label={"User Name"}></InputBox>}
                         <InputBox set={setPassword} label="Password"></InputBox>
-                        {type=='Signin'?<div></div>:<InputBox set={setFirstName} label={"What should we call u"}></InputBox>}
-                        <div className="flex justify-center pt-2 pr-4"><Submit></Submit></div>
+                        {type==='Signin'?<div></div>:<InputBox set={setFirstName} label={"What should we call u"}></InputBox>}
+                        <div className="flex justify-center pt-2 pr-4"><Submit onClick={SubmitFxn}></Submit></div>
                     </div>
-                    {type=='Signup'?(
+                    {type==='Signup'?(
                         <div className="flex space-x-1 mt-2">
                             <div className="text-white text-sm font-thin font-mono mt-1">Alresdy have an account?</div>
                             <div className="text-black underline " ><button onClick={()=>fxn(true)} >Signin</button></div>
@@ -44,21 +80,21 @@ export const Onboarding=({type,fxn}:Props)=>{
                             <div className="text-black underline"><button onClick={()=>fxn(false)}>Signup</button></div>
                         </div>)
                     }
+                    <div>{error?<div>{error}</div>:<div/>}</div>
                 </div>
             </div>
-    </div>
-}
-
-export const Onboarding1=({type})=>{
-    return <div>
+        )
+        :
+        (<div>
         <div className="flex justify-center">
                 <div className="flex-col justify-center space-y-2 sm:space-y-3 p-10 sm:p-16 mb-3 mt-3 rounded-3xl  bg-gradient-to-b from-gray-700 via-gray-500 to-gray-400 border-black shadow-xl shadow-gray-400">
-                    <div className="font-serif text-lg sm:text-3xl flex justify-center text-white mb-3 sm:mb-6 font-normal sm:font-medium  rounded-lg">{type=='Signin'?<span>WELCOME!!</span>:<span>JOIN US</span>}</div>
-                    <InputBox label="Email"></InputBox>
-                    {type=='Signin'?<div></div>:<InputBox label={"User Name"}></InputBox>}
-                    <InputBox label="Password"></InputBox>
-                    {type=='Signin'?<div></div>:<InputBox label={"What should we call u"}></InputBox>}
-                    {type=='Signup'?(
+                    <div className="font-serif text-lg sm:text-3xl flex justify-center text-white mb-3 sm:mb-6 font-normal sm:font-medium  rounded-lg">{type==='Signin'?<span>WELCOME!!</span>:<span>JOIN US</span>}</div>
+                    <InputBox set={setEmail} label="Email"></InputBox>
+                    {type==='Signin'?<div></div>:<InputBox set={setUserName} label={"User Name"}></InputBox>}
+                    <InputBox set={setPassword} label="Password"></InputBox>
+                    {type==='Signin'?<div></div>:<InputBox set={setFirstName} label={"What should we call u"}></InputBox>}
+                    <div className="flex justify-center pt-2 pr-4"><Submit onClick={SubmitFxn}></Submit></div>
+                    {type==='Signup'?(
                         <div className="flex space-x-1">
                             <div className="text-white text-sm font-thin font-mono mt-1">Alresdy have an account?</div>
                             <div className="text-black underline " ><Link to={'/signin'}>Signin</Link></div>
@@ -71,5 +107,47 @@ export const Onboarding1=({type})=>{
                         }
                 </div>
             </div>
+    </div>)
+    }
     </div>
+}
+
+export const Onboarding1=({type})=>{
+    const [email,setEmail]=useState("")
+    const [password,setPassword]=useState("")
+    const [userName,setUserName]=useState("")
+    const [firstName,setFirstName]=useState("")
+    const [token,setToken]=useRecoilState(tokenAtom)
+    //const [signup,setSignup]=useRecoilState(signupAtom)
+    //const token:string=useRecoilValue(signupSelector)
+
+    const navigate=useNavigate()
+    
+
+    const SubmitFxn=async ()=>{
+        
+        
+        try {
+            // Make the API request manually instead of using a selector
+            const response = await axios.post(
+                "https://backend.akshitgangwar02.workers.dev/api/v1/user/signup",
+                {
+                    email,
+                    userName,
+                    firstName,
+                    password
+                }
+            );
+
+            if (response.data.token) {
+                setToken(response.data.token);  // Store token in state
+                localStorage.setItem("jwtToken", response.data.token);
+                navigate("/Blogs");
+            }
+        } catch (error) {
+            console.error("Signup failed:", error);
+        }
+    }
+
+    return 
 }
