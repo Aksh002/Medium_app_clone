@@ -1,8 +1,11 @@
-import { useState } from "react"
+import { useState,useEffect } from "react"
 import { BottomBar } from "../components/BottomBar"
 import { SignupButton1 } from "../components/SignupButton"
 import { Topbar } from "../components/Topbar"
 import { Onboarding } from "../components/Onboarding"
+import { useNavigate } from "react-router-dom"
+import axios from "axios"
+import { useAuthCheckRev } from "../customHook/useAuthCheckRev"
 
 export const FrontPage=()=>{
     const [isModelOpen , setIsModelOpen]=useState(false)
@@ -11,6 +14,37 @@ export const FrontPage=()=>{
     const modelOpened=()=>setIsModelOpen(true)
     const modelClosed=()=>setIsModelOpen(false)
     const toggleUserState = (isSignin: boolean) => setNewUser(!isSignin)
+
+  //const navigate = useNavigate()
+
+  //   useEffect(()=>{
+  //     const fetchUserData=async ()=>{
+  //         if (!localStorage.getItem("jwtToken")){
+  //             navigate("/")
+  //         }
+  //         try{
+  //             const response = await axios.get(
+  //                 "https://backend.akshitgangwar02.workers.dev/api/v1/user/me",
+  //                 {
+  //                     headers:{
+  //                         Authorization:`Bearer ${localStorage.getItem("jwtToken")}`
+  //                     }
+  //                 }
+  //             )
+  //             if (response.status==200){
+  //                 localStorage.setItem("Username",response.data.user.userName)
+  //                 localStorage.setItem("FirstName",response.data.user.firstName)
+  //                 localStorage.setItem("FirstName",response.data.user.email)
+  //                 navigate("/blogs")
+  //             }
+  //         }catch(error){
+  //             console.error("Error fetching user data", error);
+  //             navigate("/")
+  //         }
+  //     }
+  //     fetchUserData()
+  // },[navigate])
+  useAuthCheckRev()
 
     return(
     <div className={`relative ${isModelOpen ? "overflow-hidden" : ""}`}>

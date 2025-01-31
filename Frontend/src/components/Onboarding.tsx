@@ -34,7 +34,7 @@ export const Onboarding=({type,fxn}:Props)=>{
         
         try {
             // Make the API request manually instead of using a selector
-            if (email!="" && password!="" && userName!="" && firstName!=""){
+            if ( type=="Signup" && email!="" && password!="" && userName!="" && firstName!=""){
                 const response = await axios.post(
                     "https://backend.akshitgangwar02.workers.dev/api/v1/user/signup",
                     {
@@ -48,6 +48,26 @@ export const Onboarding=({type,fxn}:Props)=>{
                     setToken(response.data.token);  // Store token in state
                     localStorage.setItem("jwtToken", response.data.token);
                     navigate("/Blogs");
+                }
+                else{
+                    setError(`Signup Failed ${response.data.msg}`)
+                }
+            }
+            else if (type=="Signin" && email!="" && password!="" ){
+                const response = await axios.post(
+                    "https://backend.akshitgangwar02.workers.dev/api/v1/user/signin",
+                    {
+                        email,
+                        userName,
+                    }
+                );
+                if (response.data.token) {
+                    setToken(response.data.token);  // Store token in state
+                    localStorage.setItem("jwtToken", response.data.token);
+                    navigate("/Blogs");
+                }
+                else{
+                    setError(`Signup Failed ${response.data.msg}`)
                 }
             }
             else{

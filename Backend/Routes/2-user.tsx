@@ -135,8 +135,35 @@ User.post('/signin',async (c) => {
     })
   })
 
-User.get('/me', (c) => {
-    return c.text('Hello Hono!')
+User.get('/me',async (c) => {
+    const info=c.req.header("Authorization")
+    if (!info){
+      c.status(401)
+      return c.json({
+        msg:"I'm sorry,Auth Token not recieved, Login Again"
+      })
+    }
+
+    const token=info.split(" ")[1]
+    if (!token){
+      c.status(401)
+      return c.json({
+        msg:"I'm sorry,Auth token not passed properly, Login Again"
+      })
+    }
+
+    try{
+      const decoded=await verify(token,c.env.JWT_SECRET)
+      return c.json({
+        msg:"Token Verified Succesfully",
+        user: decoded
+      })
+    }catch(error){
+      c.status(401)
+      return c.json({
+        msg:`Invalid token, Please login again,${error}`
+      })
+    }
   })
 
 export default User

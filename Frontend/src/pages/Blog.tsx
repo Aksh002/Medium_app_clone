@@ -1,10 +1,40 @@
+import { useNavigate } from "react-router-dom"
 import { Back } from "../components/Back"
 import BookMark from "../components/BookMark"
 import Like from "../components/Like"
 import { TopBar2 } from "../components/Topbar"
-
+import { useEffect } from "react"
+import axios from "axios"
+import { useAuthCheck } from "../customHook/useAuthCheck"
 
 export const Blog=()=>{
+    //const navigate=useNavigate()
+    // useEffect(()=>{
+    //     const fetchUserData=async ()=>{
+    //         if (!localStorage.getItem("jwtToken")){
+    //             navigate("/")
+    //         }
+    //         try{
+    //             const response = await axios.get(
+    //                 "https://backend.akshitgangwar02.workers.dev/api/v1/user/me",
+    //                 {
+    //                     headers:{
+    //                         Authorization:`Bearer ${localStorage.getItem("jwtToken")}`
+    //                     }
+    //                 }
+    //             )
+    //             if (response.status!==200){
+    //                 console.log(response.data.msg)
+    //                 navigate("/")
+    //             }
+    //         }catch(error){
+    //             console.error("Error fetching user data", error);
+    //             navigate("/")
+    //         }
+    //     }
+    //     fetchUserData()
+    // },[navigate])
+    useAuthCheck()
     return <div className="custom-bg h-screen w-screen">
         <TopBar2></TopBar2>
         <div><Back></Back></div>
