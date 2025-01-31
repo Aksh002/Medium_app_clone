@@ -7,7 +7,7 @@ import { TopBar3 } from "../components/Topbar"
 import axios from "axios"
 import { useAuthCheck } from "../customHook/useAuthCheck"
 
-export const Draft=()=>{
+export default function Draft(){
     //const navigate=useNavigate()
     // useEffect(()=>{
     //     const fetchUserData=async ()=>{

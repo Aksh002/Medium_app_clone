@@ -1,16 +1,40 @@
 import axios from "axios";
-import { atomFamily, selectorFamily } from "recoil";
-
-export const blogsAtomFamily=atomFamily({
-    key:"blogsAtomFamily",
-    get:selectorFamily({
-        key:"blogsSelectorFamily",
-        get:(id)=> async()=>{
+import { atom, atomFamily, selector, selectorFamily, useRecoilValue } from "recoil";
+import { tokenAtom } from "./tokenAt"
+export const blogsAtom=atom({
+    key:"blogsAtom",
+    default:selector({
+        key:"blogsSelector",
+        get:async({get})=>{
+            const token=get(tokenAtom)
+            if (!token){
+                return [];
+            }
+            try{
                 const response=await axios.get("https://backend.akshitgangwar02.workers.dev/api/v1/blog/bulk",{
                     headers:{
-                        Authorization:localStorage.getItem("jwtToken")
+                        Authorization:`Bearer ${token}`
                     }
                 })
-        }}
-    )
+                return response.data.allPost || []
+                //const allBlogs=response.data.allPost || []
+                // const blogsIds=allBlogs.map((post)=>post.id)
+                // return blogsIds
+            }catch(error){
+                console.error("Error fetching blogs:", error);
+                return [];
+            }
+        }
+    })
 })
+
+// export const blogsAtomFamily=atomFamily({
+//     key:"blogsAtomFamily",
+//     default:selectorFamily({
+//         key:"blogSelectorFamily",
+//         get:({id})=>async({get})=>{
+//             const blogsIds=get(blogsIdAtom)
+//             blogsIds.map((id)=>)
+//         }
+//     })
+// })
