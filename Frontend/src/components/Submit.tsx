@@ -1,12 +1,14 @@
 import React from 'react';
 import { useSetRecoilState } from 'recoil';
 import styled from 'styled-components';
+import { loaderAtom } from '../atoms/loaderAt';
 
 const Submit = ({onClick}) => {
   //const setLogin=useSetRecoilState(loginAtom)
+  const setLoader=useSetRecoilState(loaderAtom)
   return (
     <StyledWrapper>
-      <button onClick={()=>onClick()} className="button">
+      <button onClick={()=>{onClick();setLoader(true)}} className="button">
         SUBMIT →
       </button>
     </StyledWrapper>

@@ -27,9 +27,9 @@ export const useAuthCheckRev = () => {
 
                 
                 if (response.status==200){
-                    localStorage.setItem("Username",response.data.user.userName)
-                    localStorage.setItem("FirstName",response.data.user.firstName)
-                    localStorage.setItem("FirstName",response.data.user.email)
+                    localStorage.setItem("userName",response.data.user.userName)
+                    localStorage.setItem("firstName",response.data.user.firstName)
+                    localStorage.setItem("email",response.data.user.email)
                     navigate("/blogs")
                 }
             } catch (error) {

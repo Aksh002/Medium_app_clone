@@ -4,6 +4,7 @@ import Button from "./Button"
 import Publish from "./Publish"
 import { Link } from "react-router-dom"
 import DropDown from "./DropDown"
+import { motion,AnimatePresence } from "framer-motion"
 
 export const Topbar=({modelOpened,newUser})=>{
     return <div className="border-b-2 border-black">
@@ -17,7 +18,7 @@ export const Topbar=({modelOpened,newUser})=>{
                             <div className="hover:text-gray-500"><Link to={'/membership'}>Membership</Link></div>
                             <div className="hover:text-gray-500"><button onClick={()=>{newUser(false);modelOpened()}}>Signin</button></div>
                         </div>
-                        <div className="h-8 sm:pb-2 "><SignupButton2 modelOpened={modelOpened}></SignupButton2></div>
+                        <div className="h-8 sm:pb-2 "><SignupButton2 newUser={newUser} modelOpened={modelOpened}></SignupButton2></div>
                     </div>
                 </div>
             </div>

@@ -27,7 +27,10 @@ export const useAuthCheck = () => {
                 if (response.status !== 200) {
                     console.log("Invalid token:", response.data.msg);
                     setToken(""); // Clear token in Recoil
-                    localStorage.removeItem("token"); // Remove from localStorage
+                    localStorage.removeItem("jwtToken"); // Remove from localStorage
+                    localStorage.removeItem("userName")
+                    localStorage.removeItem("firstName")
+                    localStorage.removeItem("email")
                     navigate("/");
                 }
             } catch (error) {

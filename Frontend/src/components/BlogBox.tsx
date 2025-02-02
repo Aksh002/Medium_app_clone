@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-const BlogBox1 = ({props}) => {
+const BlogBox1 = ({fxn,props}) => {
   return (
     <StyledWrapper>
       <div className="group">
@@ -103,11 +103,11 @@ const StyledWrapper = styled.div`
 
 
 
-  const BlogBox2 = ({props}) => {
+  const BlogBox2 = ({fxn,props}) => {
     return (
       <StyledWrapper2>
         <div className="group">
-          <input required type="text" className="input text-black" />
+          <input onChange={(e)=>fxn(e.target.value)} required type="text" className="input text-black" />
           <span className="highlight" />
           <span className="bar" />
           <label>{props}</label>
@@ -200,12 +200,13 @@ const StyledWrapper = styled.div`
   }
 `;
 
-const BlogBox3 = () => {
+const BlogBox3 = ({fxn}) => {
   return (
     <StyledWrapper3>
       <textarea
         className="responsive-input"
         placeholder="Tell your story..."
+        onChange={(e)=>fxn(e.target.value)}
       ></textarea>
     </StyledWrapper3>
   );

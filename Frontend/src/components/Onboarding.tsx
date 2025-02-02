@@ -6,6 +6,9 @@ import { useSetRecoilState,useRecoilState, useRecoilValue } from "recoil";
 import { signupAtom,signupSelector } from "../atoms/signupAt";
 import { tokenAtom } from "../atoms/tokenAt"
 import axios from "axios";
+import { loaderAtom } from "../atoms/loaderAt";
+import Loader from "./Loader";
+import LoadingPage from "./LoadingPage";
 
 // interface Props{
 //     label:string;
@@ -25,7 +28,7 @@ export const Onboarding=({type,fxn}:Props)=>{
     const [error,setError]=useState("")
     //const [signup,setSignup]=useRecoilState(signupAtom)
     //const token:string=useRecoilValue(signupSelector)
-
+    const [loader,setLoader]=useRecoilState(loaderAtom)
     const navigate=useNavigate()
     
 
@@ -48,8 +51,11 @@ export const Onboarding=({type,fxn}:Props)=>{
                     setToken(response.data.token);  // Store token in state
                     localStorage.setItem("jwtToken", response.data.token);
                     navigate("/Blogs");
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    setLoader(false)
                 }
                 else{
+                    setLoader(false)
                     setError(`Signup Failed ${response.data.msg}`)
                 }
             }
@@ -58,28 +64,34 @@ export const Onboarding=({type,fxn}:Props)=>{
                     "https://backend.akshitgangwar02.workers.dev/api/v1/user/signin",
                     {
                         email,
-                        userName,
+                        password,
                     }
                 );
                 if (response.data.token) {
                     setToken(response.data.token);  // Store token in state
                     localStorage.setItem("jwtToken", response.data.token);
                     navigate("/Blogs");
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    setLoader(false)
                 }
                 else{
+                    setLoader(false)
                     setError(`Signup Failed ${response.data.msg}`)
                 }
             }
             else{
+                setLoader(false)
                 setError("A value is missing");
             }            
         } catch (err) {
+            setLoader(false)
             setError(`Signup failed:${err}`)
         }
     }
 
-    return <div>{fxn?
-        (<div className="flex justify-center">
+    return <div >
+        <div className={`relative ${loader ? "overflow-hidden" : ""}`}>
+        {fxn?(<div className="flex justify-center">
                 <div className="flex-col justify-center  p-10 sm:p-16 mb-3 mt-3 rounded-3xl  bg-gradient-to-b from-gray-700 via-gray-500 to-gray-400 border-black shadow-xl shadow-gray-400">
                     <div className="font-serif text-lg sm:text-3xl flex justify-center text-white mb-3 sm:mb-6 font-normal sm:font-medium  rounded-lg">{type==='Signin'?<span>WELCOME!!</span>:<span>JOIN US</span>}</div>
                     <div className="ml-2 space-y-3 sm:space-y-3">
@@ -129,6 +141,7 @@ export const Onboarding=({type,fxn}:Props)=>{
             </div>
     </div>)
     }
+    </div>
     </div>
 }
 

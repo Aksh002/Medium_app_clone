@@ -4,8 +4,8 @@ export const SignupButton1=({fxn})=>{
     </div>
 }
 
-export const SignupButton2=({modelOpened})=>{
+export const SignupButton2=({newUser,modelOpened})=>{
     return <div>
-        <button onClick={()=>modelOpened()} type="button" className="text-white bg-gradient-to-r from-gray-600 via-gray-800 to-black hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-gray-300 dark:focus:ring-gray-800 shadow-lg shadow-gray-500/50 dark:shadow-lg dark:shadow-gray-800/80 font-normal mt-1 sm:font-medium rounded-2xl text-sm px-2 sm:px-4 py-1 sm:py-2 text-center me-2  ">Get Started</button>
+        <button onClick={()=>{newUser(true);modelOpened()}} type="button" className="text-white bg-gradient-to-r from-gray-600 via-gray-800 to-black hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-gray-300 dark:focus:ring-gray-800 shadow-lg shadow-gray-500/50 dark:shadow-lg dark:shadow-gray-800/80 font-normal mt-1 sm:font-medium rounded-2xl text-sm px-2 sm:px-4 py-1 sm:py-2 text-center me-2  ">Get Started</button>
     </div>
 }

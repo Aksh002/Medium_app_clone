@@ -6,6 +6,11 @@ import { Onboarding } from "../components/Onboarding"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
 import { useAuthCheckRev } from "../customHook/useAuthCheckRev"
+import LoadingPage from "../components/LoadingPage"
+import { useRecoilState } from "recoil"
+import { loaderAtom } from "../atoms/loaderAt"
+import { motion,AnimatePresence } from "framer-motion"
+
 
 export const FrontPage=()=>{
     const [isModelOpen , setIsModelOpen]=useState(false)
@@ -14,7 +19,8 @@ export const FrontPage=()=>{
     const modelOpened=()=>setIsModelOpen(true)
     const modelClosed=()=>setIsModelOpen(false)
     const toggleUserState = (isSignin: boolean) => setNewUser(!isSignin)
-
+    
+    const [loader,setLoader]=useRecoilState(loaderAtom)
   //const navigate = useNavigate()
 
   //   useEffect(()=>{
@@ -46,8 +52,8 @@ export const FrontPage=()=>{
   // },[navigate])
   useAuthCheckRev()
 
-    return(
-    <div className={`relative ${isModelOpen ? "overflow-hidden" : ""}`}>
+    return(<div>
+    <div className={`relative ${isModelOpen || loader ? "overflow-hidden" : ""}`}>
         <div className="bg-customColor h-screen">
             <Topbar modelOpened={modelOpened} newUser={setNewUser}></Topbar>
             <div className="pb-12 flex justify-between mb-24 lg:mb-0">
@@ -64,22 +70,57 @@ export const FrontPage=()=>{
         </div>
 
     {/* Modal */}
-    {isModelOpen && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-        <div className="relative  rounded-lg  w-11/12 max-w-md p-6 flex">
-          {/* Close Button */}
-          <button
-            className="absolute top-3 right-3 font-bold text-xl text-gray-700 hover:text-white"
-            onClick={modelClosed}
-          >
-            ✕
-          </button>
-
-          {/* Modal Content */}
-            <Onboarding type={newUser ? "Signup" : "Signin"} fxn={toggleUserState} />
-        </div>
-      </div>
-    )}
+    <AnimatePresence>
+                {isModelOpen && !loader && (
+                    <motion.div 
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <motion.div 
+                            className="relative rounded-lg w-11/12 max-w-md p-6 flex"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <button
+                                className="absolute top-3 right-3 font-bold text-xl text-gray-700 hover:text-white"
+                                onClick={modelClosed}
+                            >
+                                ✕
+                            </button>
+                            <Onboarding type={newUser ? "Signup" : "Signin"} fxn={toggleUserState} />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            
+            <AnimatePresence>
+                {loader && (
+                    <motion.div 
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm flex-col"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <motion.div 
+                            className="flex justify-center"
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0.9 }}
+                        >
+                            <LoadingPage />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
   </div>
-    );
+  
+
+            
+  </div>);
 }

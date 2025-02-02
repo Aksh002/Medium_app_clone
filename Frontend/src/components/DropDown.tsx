@@ -23,6 +23,7 @@ const DropDown = () => {
                 localStorage.removeItem("jwtToken")
                 localStorage.removeItem("firstName")
                 localStorage.removeItem("userName")
+                localStorage.removeItem("email")
                 navigate("/signup")
               }}>
                 <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" xmlns="http://www.w3.org/2000/svg">
@@ -37,6 +38,7 @@ const DropDown = () => {
                 localStorage.removeItem("jwtToken")
                 localStorage.removeItem("firstName")
                 localStorage.removeItem("userName")
+                localStorage.removeItem("email")
                 navigate("/signin")
               }}>
                 <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" xmlns="http://www.w3.org/2000/svg">
@@ -51,6 +53,7 @@ const DropDown = () => {
                 localStorage.removeItem("jwtToken")
                 localStorage.removeItem("firstName")
                 localStorage.removeItem("userName")
+                localStorage.removeItem("email")
                 navigate("/")
               }}>
                 <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" xmlns="http://www.w3.org/2000/svg">
