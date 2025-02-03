@@ -5,7 +5,7 @@ const BlogBox1 = ({fxn,props}) => {
   return (
     <StyledWrapper>
       <div className="group">
-        <input required type="text" className="input text-black" />
+        <input onChange={(e)=>fxn(e.target.value)} required type="text" className="input text-black" />
         <span className="highlight" />
         <span className="bar" />
         <label>{props}</label>

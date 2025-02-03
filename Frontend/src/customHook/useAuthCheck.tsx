@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import axios from "axios";
-import { tokenAtom } from "../atoms/tokenAt"; 
+import { tokenAtom } from "../atoms/tokenAt";
 
 export const useAuthCheck = () => {
     const token = useRecoilValue(tokenAtom);
@@ -20,7 +20,7 @@ export const useAuthCheck = () => {
                 const response = await axios.get(
                     "https://backend.akshitgangwar02.workers.dev/api/v1/user/me",
                     {
-                        headers: { Authorization: `Bearer ${token}` },
+                        headers: { Authorization: `Bearer ${token}`},
                     }
                 );
 

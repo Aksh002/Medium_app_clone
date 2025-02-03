@@ -4,7 +4,7 @@ import { useState } from "react";
 import Submit from "./Submit";
 import { useSetRecoilState,useRecoilState, useRecoilValue } from "recoil";
 import { signupAtom,signupSelector } from "../atoms/signupAt";
-import { tokenAtom } from "../atoms/tokenAt"
+import { tokenAtom } from "../atoms/tokenAt";
 import axios from "axios";
 import { loaderAtom } from "../atoms/loaderAt";
 import Loader from "./Loader";

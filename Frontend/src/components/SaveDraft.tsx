@@ -1,10 +1,12 @@
 import React from 'react';
 import styled from 'styled-components';
-
-const SaveDraft = () => {
+interface draftType{
+  draft: (existingId:string | null) => Promise<string>
+}
+const SaveDraft = ({draft}:draftType) => {
   return (
     <StyledWrapper>
-      <button className="cssbuttons-io">
+      <button onClick={()=>draft(localStorage.getItem("currentBlogId")?localStorage.getItem("currentBlogId"):null)} className="cssbuttons-io">
         <span>Save Draft</span>
       </button>
     </StyledWrapper>

@@ -67,7 +67,7 @@ export const TopBar2=()=>{
 
 
 
-export const TopBar3=()=>{
+export const TopBar3=({draft,publish})=>{
     return <div>
         <div className="border-b-2 border-black">
             <div className="flex-col p-2 sm:p-4 ml-2 sm:ml-6 mr-6">
@@ -76,7 +76,7 @@ export const TopBar3=()=>{
                     <div className="flex-col">
                         <div className="flex justify-center space-x-4 sm:space-x-12">
                             <div className="flex justify-center space-x-6 text-sm font-medium font-sans mt-2.5">
-                                <Publish></Publish>
+                                <Publish draft={draft} publish={publish}></Publish>
                             </div>
                             <button><div className="rounded-full text-xl font-semibold font-sans bg-gray-800 text-white px-4 py-2 mt-1">A</div></button>
                         </div>
