@@ -3,9 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useSetRecoilState } from 'recoil';
 import styled from 'styled-components';
 import { tokenAtom } from "../atoms/tokenAt"
+import { draftsAtom, viewDraftAtom } from '../atoms/draftsAtom';
+import { viewMyBlogsAtom } from '../atoms/myBlogsAtom';
 const DropDown = () => {
     const navigate=useNavigate()
     const setToken=useSetRecoilState(tokenAtom)
+    const setViewDraft=useSetRecoilState(viewDraftAtom)
+    const setViewMyBlogs=useSetRecoilState(viewMyBlogsAtom)
   return (
     <StyledWrapper>
       <label className="popup">
@@ -17,6 +21,28 @@ const DropDown = () => {
         </div>
         <nav className="popup-window">
           <ul>
+          <li>
+              <button onClick={()=>{
+                setViewMyBlogs(false)
+                setViewDraft(true)
+              }}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2.598 9h-1.055c1.482-4.638 5.83-8 10.957-8 6.347 0 11.5 5.153 11.5 11.5s-5.153 11.5-11.5 11.5c-5.127 0-9.475-3.362-10.957-8h1.055c1.443 4.076 5.334 7 9.902 7 5.795 0 10.5-4.705 10.5-10.5s-4.705-10.5-10.5-10.5c-4.568 0-8.459 2.923-9.902 7zm12.228 3l-4.604-3.747.666-.753 6.112 5-6.101 5-.679-.737 4.608-3.763h-14.828v-1h14.826z" />
+                </svg>
+                <span>View My Drafts</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={()=>{
+                setViewDraft(false)
+                setViewMyBlogs(true)
+              }}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2.598 9h-1.055c1.482-4.638 5.83-8 10.957-8 6.347 0 11.5 5.153 11.5 11.5s-5.153 11.5-11.5 11.5c-5.127 0-9.475-3.362-10.957-8h1.055c1.443 4.076 5.334 7 9.902 7 5.795 0 10.5-4.705 10.5-10.5s-4.705-10.5-10.5-10.5c-4.568 0-8.459 2.923-9.902 7zm12.228 3l-4.604-3.747.666-.753 6.112 5-6.101 5-.679-.737 4.608-3.763h-14.828v-1h14.826z" />
+                </svg>
+                <span>View My Posts</span>
+              </button>
+            </li>
             <li>
               <button onClick={()=>{
                 setToken("")

@@ -4,9 +4,12 @@ import { TopBar2 } from "../components/Topbar"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 import { useAuthCheck } from "../customHook/useAuthCheck"
-import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil"
+import { useRecoilRefresher_UNSTABLE, useRecoilState, useRecoilValue, useSetRecoilState } from "recoil"
 import { blogsAtom, blogsFetchSelector, blogsIdAtom } from "../atoms/blogsAtom"
 import { motion,AnimatePresence } from "framer-motion"
+import { draftsAtom, viewDraftAtom } from "../atoms/draftsAtom"
+import { myBlogsAtom, viewMyBlogsAtom } from "../atoms/myBlogsAtom"
+import { Back } from "../components/Back"
 
 export default function Blogs(){
     
@@ -18,6 +21,18 @@ export default function Blogs(){
     // useEffect(() => {
     //     setFetchBlogs;
     // },[]);
+    
+    const fetchDrafts=useRecoilValue(draftsAtom)
+    const [viewDraft,setViewDraft]=useRecoilState(viewDraftAtom)
+    const fetchMyBlogs=useRecoilValue(myBlogsAtom)
+    const [viewMyBlogs,setViewMyBlogs]=useRecoilState(viewMyBlogsAtom)
+    //const refreshMyBlogs = useRecoilRefresher_UNSTABLE(myBlogsAtom);
+
+    // useEffect(() => {
+    //     if (viewMyBlogs) {
+    //       refreshMyBlogs(); // Force re-fetch blogs when viewMyBlogs changes
+    //     }
+    //   }, [viewMyBlogs]);
     
     if (!fetchBlogs.length) return <div>Loading blogs...</div>;
     return <div className="min-h-screen bg-white">
@@ -35,6 +50,8 @@ export default function Blogs(){
                 exit={{ scale: 0.9 }}
                 >
                     <TopBar2></TopBar2>
+                    {(viewDraft)?<div><Back onClick={setViewDraft}></Back></div>:<div></div>}
+                    {(viewMyBlogs)?<div><Back onClick={setViewMyBlogs}></Back></div>:<div></div>}
                 </motion.div>
             </motion.div>
         </AnimatePresence>
@@ -51,7 +68,8 @@ export default function Blogs(){
                         },
                         }}
             >
-                {fetchBlogs.map((blog,id)=>
+                {(!viewDraft && !viewMyBlogs)?<div>
+                    {fetchBlogs.map((blog,id)=>
                     <motion.div 
                     variants={{
                         hidden: { opacity: 0, y: 1000 },
@@ -61,6 +79,31 @@ export default function Blogs(){
                         <BlogPrev key={id} blog={blog}></BlogPrev>
                     </motion.div>
                 )}
+                </div>:<div></div>}
+                {viewDraft && <div>{
+                    fetchDrafts.map((blog,id)=>
+                    <motion.div 
+                    variants={{
+                        hidden: { opacity: 0, y: 1000 },
+                        visible: { opacity: 1, y: 0, transition: { duration: 1.5 } },
+                      }}
+                    >
+                        <BlogPrev key={id} blog={blog}></BlogPrev>
+                    </motion.div>
+                )
+                    }</div>}
+                {viewMyBlogs && <div>{
+                    fetchMyBlogs.map((blog,id)=>
+                    <motion.div 
+                    variants={{
+                        hidden: { opacity: 0, y: 1000 },
+                        visible: { opacity: 1, y: 0, transition: { duration: 1.5 } },
+                      }}
+                    >
+                        <BlogPrev key={id} blog={blog}></BlogPrev>
+                    </motion.div>
+                )
+                    }</div>}
             </motion.div>
         </div>
     </div>

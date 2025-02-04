@@ -12,7 +12,7 @@ import { loaderAtom } from "../atoms/loaderAt"
 import { motion,AnimatePresence } from "framer-motion"
 
 
-export const FrontPage=()=>{
+export default function FrontPage(){
     const [isModelOpen , setIsModelOpen]=useState(false)
     const [newUser,setNewUser]=useState(true)
 

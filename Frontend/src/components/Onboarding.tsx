@@ -92,7 +92,7 @@ export const Onboarding=({type,fxn}:Props)=>{
     return <div >
         <div className={`relative ${loader ? "overflow-hidden" : ""}`}>
         {fxn?(<div className="flex justify-center">
-                <div className="flex-col justify-center  p-10 sm:p-16 mb-3 mt-3 rounded-3xl  bg-gradient-to-b from-gray-700 via-gray-500 to-gray-400 border-black shadow-xl shadow-gray-400">
+                <div className="flex-col justify-center  p-10 sm:p-16 mb-3 mt-3 rounded-3xl  bg-gradient-to-b from-gray-700 via-gray-500 to-gray-400 border-black shadow-2xl  shadow-black">
                     <div className="font-serif text-lg sm:text-3xl flex justify-center text-white mb-3 sm:mb-6 font-normal sm:font-medium  rounded-lg">{type==='Signin'?<span>WELCOME!!</span>:<span>JOIN US</span>}</div>
                     <div className="ml-2 space-y-3 sm:space-y-3">
                         <InputBox set={setEmail} label="Email"></InputBox>

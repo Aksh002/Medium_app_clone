@@ -2,23 +2,23 @@ import axios from "axios";
 import { atom, atomFamily, selector, selectorFamily, useRecoilValue } from "recoil";
 import { tokenAtom } from "./tokenAt"
 
-export const viewDraftAtom=atom({
-    key:"viewDraft",
+export const viewMyBlogsAtom=atom({
+    key:"viewMyBlogsAtom",
     default:false
 })
 
 
-export const draftsAtom=atom({
-    key:"draftsAtom",
+export const myBlogsAtom=atom({
+    key:"myBlogsAtom",
     default:selector({
-        key:"draftsSelector",
+        key:"myBlogsSelector",
         get:async({get})=>{
             const token=get(tokenAtom)
             if (!token){
                 return [];
             }
             try{
-                const response=await axios.get("https://backend.akshitgangwar02.workers.dev/api/v1/blog/drafts",{
+                const response=await axios.get("https://backend.akshitgangwar02.workers.dev/api/v1/blog/myPosts",{
                     headers:{
                         Authorization:`Bearer ${token}`
                     }

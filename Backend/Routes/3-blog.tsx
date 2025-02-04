@@ -14,33 +14,33 @@ const Blog = new Hono<{
 //                                        Auth  MIDDLEWARE
 Blog.use('/*', async (c, next) => {
     try {
-      // Extract the Authorization header
+      
       const token = c.req.header("Authorization");
       if (!token) {
-        c.status(401); // 401 Unauthorized
+        c.status(401); 
         return c.json({ error: "Unauthorized: Token missing" });
       }
   
-      // Extract the JWT part
+      
       const tokenPart = token.split(" ")[1];
       if (!tokenPart) {
-        c.status(401); // 401 Unauthorized
+        c.status(401); 
         return c.json({ error: "Unauthorized: Malformed token" });
       }
   
-      // Verify the JWT and handle potential errors
+      
       let payload;
       try {
         payload = await verify(tokenPart, c.env.JWT_SECRET);
       } catch (err) {
-        // Handle verification errors gracefully
-        c.status(403); // 403 Forbidden
+        
+        c.status(403); 
         return c.json({ error: "Invalid or expired token, please log in again" });
       }
   
-      // Validate the payload structure
+      
       if (!payload || typeof payload.id !== 'string') {
-        c.status(400); // 400 Bad Request
+        c.status(400); 
         return c.json({ error: "Invalid token payload" });
       }
   
@@ -48,9 +48,9 @@ Blog.use('/*', async (c, next) => {
       c.set('userId', payload.id);
       await next();
     } catch (err) {
-      // Catch any unexpected errors and provide a user-friendly response
+      
       console.error("Unexpected error in middleware:", err);
-      c.status(500); // 500 Internal Server Error
+      c.status(500); 
       return c.json({ error: "An unexpected error occurred, please try again later" });
     }
   });

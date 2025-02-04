@@ -1,13 +1,17 @@
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { Back } from "../components/Back"
 import BookMark from "../components/BookMark"
 import Like from "../components/Like"
 import { TopBar2 } from "../components/Topbar"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import axios from "axios"
 import { useAuthCheck } from "../customHook/useAuthCheck"
+import { useRecoilValue } from "recoil"
+import { tokenAtom } from "../atoms/tokenAt"
+import LoadingPage from "../components/LoadingPage"
 
-export const Blog=()=>{
+
+export default function Blog(){
     //const navigate=useNavigate()
     // useEffect(()=>{
     //     const fetchUserData=async ()=>{
@@ -35,13 +39,42 @@ export const Blog=()=>{
     //     fetchUserData()
     // },[navigate])
     useAuthCheck()
+    const { blogId }=useParams()
+    const token=useRecoilValue(tokenAtom)
+    const [error,setError]=useState("")
+    const [loading,setLoading]=useState(true)
+    const [blog,setBlog]=useState(null)
+    const navigate=useNavigate()
+    useEffect(()=>{
+        const fetchBlog=async ()=>{
+            try{
+                const response=await axios.get(`https://backend.akshitgangwar02.workers.dev/api/v1/blog?id=${blogId}`,{
+                    headers:{
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+                setBlog(response.data.post)
+            }catch(error){
+                setError("Failed to fetch blog")
+                console.error("Error fetching blog:", error)
+            }finally{
+                setLoading(false)
+            }
+        }
+        fetchBlog()
+    },[blogId])
+    if (loading) return (<div className="h-screen flex flex-col justify-center">
+        <div className="flex justify-center">
+            <LoadingPage></LoadingPage>
+        </div>
+    </div>)
     return <div className="custom-bg h-screen w-screen">
         <TopBar2></TopBar2>
-        <div><Back></Back></div>
+        <div><Back onClick={()=>navigate("/blogs")}></Back></div>
         <div className=" md:flex justify-stretch">
             <div className="w-3/5 h-4/5 ml-20 mr-40 mb-32 mt-20  space-y-4">
                 <div className="mb-10">
-                    <div className="text-4xl font-sans font-bold pb-16  md:text-8xl">Title</div>
+                    <div className="text-4xl font-sans font-bold pb-16 sm:text-4xl md:text-6xl">{blog.title}</div>
                     <div className="flex-col">
                         <div className="border-y-2 border-customGray flex justify-between  py-2">
                             <div className="flex justify-start space-x-6 ml-4">
@@ -64,9 +97,9 @@ export const Blog=()=>{
                     </div>
                 </div>
                 <div className="mt-2">
-                    <div className="text-lg md:text-2xl font-serif font-thin text-slate-700">SubTitle</div>
+                    <div className="text-lg md:text-2xl font-serif font-thin text-slate-700">{blog.subTitle}</div>
                     <div className="mb-12 mt-12 ">Image</div>
-                    <div className="text-base md:text-xl font-medium font-serif">Content</div>
+                    <div className="text-base md:text-xl font-medium font-serif">{blog.content}</div>
                 </div>
                 <div>
                 

@@ -3,7 +3,7 @@ import { Onboarding } from "../components/Onboarding"
 import { Topbar1 } from "../components/Topbar"
 import { useAuthCheckRev } from "../customHook/useAuthCheckRev"
 
-export const Signup=()=>{
+export default function Signup(){
     useAuthCheckRev()
     return <div>
         <div className="min-h-screen bg-customColor space-y-4">

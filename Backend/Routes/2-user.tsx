@@ -137,6 +137,13 @@ User.post('/signin',async (c) => {
 
 User.get('/me',async (c) => {
     const info=c.req.header("Authorization")
+    if (!info?.startsWith('Bearer ')) {
+      c.status(401)
+      return c.json({
+          msg: "Invalid Authorization header format"
+      })
+  }
+
     if (!info){
       c.status(401)
       return c.json({
@@ -154,9 +161,40 @@ User.get('/me',async (c) => {
 
     try{
       const decoded=await verify(token,c.env.JWT_SECRET)
+
+      if (!decoded || !decoded.email) {
+        c.status(401)
+        return c.json({
+            msg: "Invalid token payload"
+        })
+      }
+
+      const prisma = new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL,          
+      }).$extends(withAccelerate())
+
+      const user=await prisma.users.findUnique({
+        where:{
+          id: decoded.id,
+          email: decoded.email
+        },
+        select:{
+          hashPass:false,
+          id: true,
+          email: true,
+          userName: true,
+          firstName: true,
+        }
+      })
+      if (!user) {
+        c.status(404)
+        return c.json({
+            msg: "User not found"
+        })
+      }
       return c.json({
         msg:"Token Verified Succesfully",
-        user: decoded
+        user
       })
     }catch(error){
       c.status(401)
