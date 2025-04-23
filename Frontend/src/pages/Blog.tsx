@@ -68,7 +68,7 @@ export default function Blog(){
             <LoadingPage></LoadingPage>
         </div>
     </div>)
-    return <div className="custom-bg h-screen w-screen">
+    return <div className="bg-customColor h-screen w-screen">
         <TopBar2></TopBar2>
         <div><Back onClick={()=>navigate("/blogs")}></Back></div>
         <div className=" md:flex justify-stretch">

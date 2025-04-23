@@ -16,6 +16,7 @@ const FrontPage=lazy(()=>import('./pages/FrontPage'))
 const Signup=lazy(()=>import('./pages/Signup'))
 const Signin=lazy(()=>import('./pages/Signin'))
 const Blogs=lazy(()=>import('./pages/Blogs'))
+const Dashboard=lazy(()=>import('./pages/Dashboard'))
 const Draft=lazy(()=>import('./pages/Draft'))
 const Blog=lazy(()=>import('./pages/Blog'))
 const Membership=lazy(()=>import('./pages/Membership'))
@@ -34,6 +35,7 @@ function App() {
               <Route path='/signup' element={<Signup />} />
               <Route path='/signin' element={<Signin />} />
               <Route path='/blogs' element={<Blogs />} />
+              <Route path='/dashboard' element={<Dashboard />} />
               <Route path='/draft' element={<Draft />} />
               <Route path='/blog/:blogId' element={<Blog />} />
               <Route path='/membership' element={<Membership />} />
