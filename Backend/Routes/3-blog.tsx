@@ -267,6 +267,24 @@ Blog.get('/myPosts',async (c) => {
     })
 })
 
+Blog.get('/mySavedPosts',async (c) => {
+    const  userId=c.get('userId')
+    const myPost= await c.var.prisma.posts.findMany({
+        where:{
+            published:true,
+            authorId:userId
+        }
+    })
+    if (!myPost){
+        return c.json({
+            msg:"Nothing to see here"
+        })
+    }
+    return c.json({
+        allPost:myPost
+    })
+})
+
 Blog.get('/drafts',async (c) => {
     const  userId=c.get('userId')
     const myPost= await c.var.prisma.posts.findMany({

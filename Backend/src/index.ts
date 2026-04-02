@@ -10,7 +10,11 @@ import { withAccelerate } from '@prisma/extension-accelerate'
 
 
 
-app.use(cors());
+app.use('*', cors({
+  origin: '*',
+  allowHeaders: ['Content-Type', 'Authorization'],
+  allowMethods: ['POST', 'GET', 'PUT', 'DELETE', 'OPTIONS'],
+}));
 
 app.route("/api/v1",Main)
 

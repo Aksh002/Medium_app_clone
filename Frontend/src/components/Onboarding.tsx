@@ -45,6 +45,11 @@ export const Onboarding=({type,fxn}:Props)=>{
                         userName,
                         firstName,
                         password
+                    },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
                     }
                 );
                 if (response.data.token) {
@@ -65,6 +70,11 @@ export const Onboarding=({type,fxn}:Props)=>{
                     {
                         email,
                         password,
+                    },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
                     }
                 );
                 if (response.data.token) {
