@@ -1,4 +1,4 @@
-# Medium_app_clone
+# Medium-Style Serverless Blogging application 
 
 Medium_app_clone is a three-part TypeScript codebase that recreates the core flow of a Medium-style blogging app:
 
