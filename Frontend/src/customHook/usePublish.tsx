@@ -1,28 +1,16 @@
-import axios from "axios"
-import { useNavigate } from "react-router-dom"
+import { api } from "../lib/api";
 
-export const usePublish=async ({post,title,subTitle,content})=>{
-    const [error,setError]=useState("")
-    if (title==""){
-        setError("Title Is Necessary")
-    }
-    else if (content==""){
-        setError("Content is necassary")
-    }
-    else{
-        try{
-            const response=await axios.post("https://backend.akshitgangwar02.workers.dev/api/v1/blog/",{
-                title: title,
-                subTitle: subTitle?subTitle:" ",
-                content:content
-            })
-            if (response){
-                const post=await axios.post(`https://backend.akshitgangwar02.workers.dev/api/v1/blog/${response.data.id}`)
-                
-            }
+type PublishInput = {
+  title: string;
+  subTitle?: string;
+  content: string;
+  postId?: string;
+};
 
-        }catch(error){
-            setError(`Couldnt save the draft:- ${error}`)
-        }
-    }
-}
+export const publishPost = async ({ title, subTitle, content, postId }: PublishInput) => {
+  const saved = postId
+    ? await api.updatePost(postId, { title, subTitle, content })
+    : await api.createPost({ title, subTitle, content });
+
+  return api.publishPost(saved.post.id);
+};

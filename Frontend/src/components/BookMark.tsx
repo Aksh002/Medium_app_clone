@@ -1,11 +1,15 @@
-import React from 'react';
 import styled from 'styled-components';
 
-const BookMark = () => {
+type BookMarkProps = {
+  active?: boolean;
+  onToggle?: () => void;
+};
+
+const BookMark = ({ active = false, onToggle }: BookMarkProps) => {
   return (
     <StyledWrapper>
       <label className="ui-bookmark">
-        <input type="checkbox" />
+        <input type="checkbox" checked={active} onChange={onToggle} readOnly={!onToggle} />
         <div className="bookmark">
           <svg viewBox="0 0 32 32">
             <g>
