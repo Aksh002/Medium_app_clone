@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,23 +6,291 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-model Users{
-  id        String @id @default(uuid())
-  email     String
-  userName  String
-  firstName String
-  hashPass  String
-  posts     Posts[]
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }
 
-model Posts{
-  id        String @id @default(uuid())
-  title     String
-  subTitle  String
+enum SeriesVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum NotificationType {
+  LIKE
+  BOOKMARK
+  COMMENT
+  FOLLOW
+  REVISION
+}
+
+model Users {
+  id               String             @id @default(uuid())
+  email            String             @unique
+  userName         String             @unique
+  firstName        String
+  bio              String?
+  avatarUrl        String?
+  hashPass         String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  posts            Posts[]
+  comments         Comments[]
+  likes            Likes[]
+  bookmarks        Bookmarks[]
+  following        Follows[]          @relation("following")
+  followers        Follows[]          @relation("followers")
+  readingHistory   ReadingHistory[]
+  series           Series[]
+  highlights       Highlights[]
+  privateNotes     PrivateNotes[]
+  reports          Reports[]
+  challengeEntries ChallengeEntries[]
+  aiSuggestions    AiSuggestions[]
+
+  @@unique([id, email])
+}
+
+model Posts {
+  id               String             @id @default(uuid())
+  title            String
+  subTitle         String
+  content          String
+  slug             String             @unique
+  coverImageUrl    String?
+  status           PostStatus         @default(DRAFT)
+  published        Boolean            @default(false)
+  readingTime      Int                @default(1)
+  publishedAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  authorId         String
+  author           Users              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags             PostTags[]
+  comments         Comments[]
+  likes            Likes[]
+  bookmarks        Bookmarks[]
+  revisions        PostRevisions[]
+  readingHistory   ReadingHistory[]
+  seriesPosts      SeriesPosts[]
+  highlights       Highlights[]
+  privateNotes     PrivateNotes[]
+  reports          Reports[]
+  challengeEntries ChallengeEntries[]
+  aiSuggestions    AiSuggestions[]
+
+  @@unique([id, authorId])
+  @@index([status, publishedAt])
+  @@index([authorId, status])
+}
+
+model Tags {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  slug      String     @unique
+  posts     PostTags[]
+  createdAt DateTime   @default(now())
+}
+
+model PostTags {
+  postId String
+  tagId  String
+  post   Posts  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tags   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+model Comments {
+  id        String     @id @default(uuid())
   content   String
-  published Boolean @default(false)
+  postId    String
   authorId  String
-  author    Users    @relation(fields: [authorId],references: [id]) 
+  parentId  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  post      Posts      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    Users      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent    Comments?  @relation("commentReplies", fields: [parentId], references: [id])
+  replies   Comments[] @relation("commentReplies")
 
+  @@index([postId, createdAt])
 }
 
+model Likes {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      Posts    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model Bookmarks {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      Posts    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model Follows {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    Users    @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   Users    @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model PostRevisions {
+  id         String   @id @default(uuid())
+  postId     String
+  version    Int
+  title      String
+  subTitle   String
+  content    String
+  changeNote String?
+  createdAt  DateTime @default(now())
+  post       Posts    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, version])
+}
+
+model ReadingHistory {
+  id                 String   @id @default(uuid())
+  userId             String
+  postId             String
+  lastReadRevisionId String?
+  progress           Int      @default(0)
+  lastReadAt         DateTime @default(now())
+  user               Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post               Posts    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Series {
+  id          String           @id @default(uuid())
+  title       String
+  description String?
+  slug        String           @unique
+  visibility  SeriesVisibility @default(PUBLIC)
+  authorId    String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  author      Users            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  posts       SeriesPosts[]
+
+  @@index([authorId, visibility])
+}
+
+model SeriesPosts {
+  seriesId String
+  postId   String
+  order    Int
+  series   Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  post     Posts  @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([seriesId, postId])
+  @@unique([seriesId, order])
+}
+
+model Highlights {
+  id           String   @id @default(uuid())
+  userId       String
+  postId       String
+  selectedText String
+  startOffset  Int
+  endOffset    Int
+  note         String?
+  createdAt    DateTime @default(now())
+  user         Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post         Posts    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([userId, postId])
+}
+
+model PrivateNotes {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Posts    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Notifications {
+  id        String           @id @default(uuid())
+  userId    String
+  actorId   String?
+  postId    String?
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read, createdAt])
+}
+
+model Reports {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String?
+  commentId String?
+  reason    String
+  createdAt DateTime @default(now())
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Posts?   @relation(fields: [postId], references: [id], onDelete: SetNull)
+}
+
+model Challenges {
+  id             String             @id @default(uuid())
+  title          String
+  slug           String             @unique
+  description    String
+  durationDays   Int
+  promptTemplate String
+  createdAt      DateTime           @default(now())
+  entries        ChallengeEntries[]
+}
+
+model ChallengeEntries {
+  id          String     @id @default(uuid())
+  challengeId String
+  userId      String
+  postId      String?
+  dayNumber   Int
+  createdAt   DateTime   @default(now())
+  challenge   Challenges @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user        Users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Posts?     @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  @@unique([challengeId, userId, dayNumber])
+}
+
+model AiSuggestions {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String?
+  kind      String
+  prompt    String
+  output    String
+  accepted  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Posts?   @relation(fields: [postId], references: [id], onDelete: SetNull)
+}
