@@ -1,184 +1,150 @@
-import { useNavigate } from "react-router-dom"
-import { AddButton } from "../components/AddButton"
-import { BlogBox1,BlogBox2, BlogBox3 } from "../components/BlogBox"
-import SaveDraft from "../components/SaveDraft"
-import { useEffect, useRef, useState } from "react"
-import { TopBar3 } from "../components/Topbar"
-import axios from "axios"
-import { useAuthCheck } from "../customHook/useAuthCheck"
-import { motion,AnimatePresence } from "framer-motion"
-import { useRecoilValue } from "recoil"
-import { tokenAtom } from "../atoms/tokenAt"
-
-
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            duration: 0.5,
-            staggerChildren: 0.1
-        }
-    },
-    exit: {
-        opacity: 0,
-        transition: { duration: 0.3 }
-    }
-};
-
-const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-        y: 0,
-        opacity: 1,
-        transition: {
-            type: "spring",
-            stiffness: 100,
-            damping: 12
-        }
-    }
-};
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { useNavigate } from "react-router-dom";
+import remarkGfm from "remark-gfm";
+import { TopBar2 } from "../components/Topbar";
+import { useAuthGuard } from "../hooks";
+import { api } from "../lib/api";
 
 export default function Draft(){
-    const isFirstRender = useRef(true);
-    
-    useEffect(()=>{
-        if (isFirstRender.current){
-            localStorage.removeItem("currentBlogId")
-            isFirstRender.current=false
-        }
+  const { checking } = useAuthGuard();
+  const navigate = useNavigate();
+  const postIdRef = useRef<string | null>(localStorage.getItem("currentBlogId"));
+  const [title, setTitle] = useState("");
+  const [subTitle, setSubTitle] = useState("");
+  const [content, setContent] = useState("## Today I learned\n\n");
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [tagInput, setTagInput] = useState("learning, build-log");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState("");
+  const [dirty, setDirty] = useState(false);
 
-        return ()=>{
-            localStorage.removeItem("currentBlogId")
-        }
-    },[])
+  const tags = useMemo(
+    () =>
+      tagInput
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    [tagInput],
+  );
 
-    useAuthCheck()
-    const [title,setTitle]=useState("")
-    const [subTitle,setSubTitle]=useState("")
-    const [content,setContent]=useState("")
-    const [error,setError]=useState("")
-    const navigate=useNavigate()
-    const token=useRecoilValue(tokenAtom)
-
-    const draft=async(existingId:string | null)=>{
-        console.log("draft fxn triggered")
-        if (title==""){
-            setError("Title Is Necessary")
-            console.log("Publish function triggered in !title!");
-        }
-        if (existingId){
-            try{
-                console.log("draft function triggered in else part but put statement!");
-                const response=await axios.put(`https://backend.akshitgangwar02.workers.dev/api/v1/blog/${existingId}`,{
-                    title: title,
-                    subTitle: subTitle?subTitle:" ",
-                    content:content
-                },{
-                    headers:{
-                        Authorization:`Bearer ${token}`
-                    }
-                })
-                return existingId
-            }catch(error){
-                console.log(error)
-                setError(`Couldnt save the draft:- ${error}`)
-            }
-        }
-        else{
-            try{
-                console.log("Draft function triggered in else part!");
-                const response=await axios.post("https://backend.akshitgangwar02.workers.dev/api/v1/blog",{
-                    title: title,
-                    subTitle: subTitle?subTitle:" ",
-                    content:content
-                },{
-                    headers:{
-                        Authorization:`Bearer ${token}`
-                    }
-                })
-                localStorage.setItem("currentBlogId",response.data.blogId)
-                return response.data.blogId
-            }catch(error){
-                console.log(error)
-                setError(`Couldnt save the draft:- ${error}`)
-            }
-        }
-    }
-    const publish=async (blogId:string)=>{
-        //const token=localStorage.getItem("jwtToken")
-        console.log("Publish function triggered!");
-        if (title==""){
-            setError("Title Is Necessary")
-            console.log("Publish function triggered in !title!");
-        }
-        else if (content==""){
-            setError("Content is necassary")
-            console.log("Publish function triggered in !content!");
-        }
-        else{
-            try{
-                console.log("try")
-                    const post=await axios.post(`https://backend.akshitgangwar02.workers.dev/api/v1/blog/${blogId}`,{},{
-                        headers:{
-                            Authorization:`Bearer ${token}`
-                        }
-                    })
-                    console.log("After post")
-                    if (post.status==200){
-                        navigate("/blogs")
-                    }
-            }catch(error){
-                setError(`Couldnt post the draft:- ${error}`)
-                console.log(error)
-            }
-        }
+  const saveDraft = useCallback(async () => {
+    if (!title.trim()) {
+      setError("A title is required before saving.");
+      return null;
     }
 
-    return (
-        <AnimatePresence mode="wait">
-            <motion.div
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                variants={containerVariants}
-            >
-                <div className="custom-bg h-screen bg-cover bg-center">
-                    <motion.div variants={itemVariants}>
-                        <TopBar3 draft={draft} publish={publish} />
-                    </motion.div>
-                    
-                    <div className="flex justify-center h-4/5">
-                        <motion.div 
-                            className="bg-customYellow text-white mt-10 w-screen lg:w-3/5 flex justify-start rounded-3xl space-x-2 pt-8 sm:pt-0"
-                            variants={itemVariants}
-                        >
-                            <motion.div className="mt-10" variants={itemVariants}>
-                                <AddButton />
-                            </motion.div>
-                            
-                            <div className="flex-col w-screen px-6 sm:px-2 space-y-5 sm:space-y-4">
-                                <motion.div variants={itemVariants}>
-                                    <BlogBox1 fxn={setTitle} props='Title' />
-                                </motion.div>
-                                <motion.div variants={itemVariants} className="mt-4 sm:mt-0">
-                                    <BlogBox2 fxn={setSubTitle} props='SubTitle' />
-                                </motion.div>
-                                <motion.div variants={itemVariants}>
-                                    <BlogBox3 fxn={setContent}/>
-                                </motion.div>
-                            </div>
-                        </motion.div>
-                    </div>
-                    
-                    <motion.div 
-                        className="w-3/5 mx-auto flex justify-end"
-                        variants={itemVariants}
-                    >
-                        <SaveDraft draft={draft} />
-                    </motion.div>
-                </div>
-            </motion.div>
-        </AnimatePresence>
-    )
+    setSaving(true);
+    setError("");
+    try {
+      const payload = { title, subTitle, content, coverImageUrl, tags };
+      const response = postIdRef.current
+        ? await api.updatePost(postIdRef.current, payload)
+        : await api.createPost(payload);
+      postIdRef.current = response.post.id;
+      localStorage.setItem("currentBlogId", response.post.id);
+      setLastSaved(new Date().toLocaleTimeString());
+      setDirty(false);
+      return response.post;
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not save draft");
+      return null;
+    } finally {
+      setSaving(false);
+    }
+  }, [content, coverImageUrl, subTitle, tags, title]);
+
+  const publish = async () => {
+    const post = await saveDraft();
+    if (!post) {
+      return;
+    }
+
+    try {
+      const published = await api.publishPost(post.id);
+      localStorage.removeItem("currentBlogId");
+      navigate(`/p/${published.post.slug}`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not publish post");
+    }
+  };
+
+  useEffect(() => {
+    const markDirty = () => setDirty(true);
+    markDirty();
+  }, [title, subTitle, content, coverImageUrl, tagInput]);
+
+  useEffect(() => {
+    if (!dirty || !title.trim()) {
+      return;
+    }
+
+    const id = window.setTimeout(() => {
+      void saveDraft();
+    }, 5000);
+
+    return () => window.clearTimeout(id);
+  }, [dirty, saveDraft, title]);
+
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if (!dirty) {
+        return;
+      }
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  if (checking) {
+    return <div className="grid min-h-screen place-items-center bg-[#fffaf0]">Checking your desk...</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-[#fffaf0] text-stone-950">
+      <TopBar2 />
+      <main className="mx-auto grid max-w-7xl gap-8 px-5 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <section className="rounded border border-stone-200 bg-white p-5 shadow-sm">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-700">Markdown desk</p>
+              <h1 className="font-serif text-4xl">Write a living article</h1>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => void saveDraft()} className="rounded border border-stone-300 px-4 py-2 text-sm font-semibold">
+                {saving ? "Saving..." : "Save"}
+              </button>
+              <button onClick={() => void publish()} className="rounded bg-stone-950 px-4 py-2 text-sm font-semibold text-amber-200">
+                Publish
+              </button>
+            </div>
+          </div>
+
+          {error && <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+          {lastSaved && <div className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">Saved at {lastSaved}</div>}
+
+          <div className="space-y-4">
+            <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Article title" className="w-full border-b border-stone-300 bg-transparent pb-3 font-serif text-5xl outline-none" />
+            <input value={subTitle} onChange={(event) => setSubTitle(event.target.value)} placeholder="A crisp promise for the reader" className="w-full border-b border-stone-200 bg-transparent pb-3 text-xl outline-none" />
+            <input value={coverImageUrl} onChange={(event) => setCoverImageUrl(event.target.value)} placeholder="Cover image URL" className="w-full rounded border border-stone-200 px-3 py-2 outline-none focus:border-stone-950" />
+            <input value={tagInput} onChange={(event) => setTagInput(event.target.value)} placeholder="tags, comma separated" className="w-full rounded border border-stone-200 px-3 py-2 outline-none focus:border-stone-950" />
+            <textarea value={content} onChange={(event) => setContent(event.target.value)} className="min-h-[520px] w-full resize-y rounded border border-stone-200 bg-[#fffaf0] p-4 font-mono text-sm leading-7 outline-none focus:border-stone-950" />
+          </div>
+        </section>
+
+        <section className="rounded border border-stone-200 bg-white p-5 shadow-sm">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-stone-500">Live preview</p>
+          {coverImageUrl && <img src={coverImageUrl} alt="" className="mb-6 aspect-[16/9] w-full rounded object-cover" />}
+          <article className="prose prose-stone max-w-none">
+            <h1>{title || "Untitled learning note"}</h1>
+            {subTitle && <p className="lead">{subTitle}</p>}
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+          </article>
+        </section>
+      </main>
+    </div>
+  );
 }

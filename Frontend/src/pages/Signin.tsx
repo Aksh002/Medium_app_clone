@@ -9,7 +9,9 @@ export default function Signin(){
         <div className="min-h-screen bg-customColor ">
             <Topbar1 label={'Signin'}></Topbar1>
             <div className="mt-16 mb-16 sm:mb-32">
-                <Onboarding fxn={null} type={'Signin'}></Onboarding>
+                <div className="flex justify-center px-5">
+                    <Onboarding type={'Signin'}></Onboarding>
+                </div>
             </div>
             <BottomBar></BottomBar>
         </div>        

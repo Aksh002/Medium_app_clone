@@ -1,119 +1,180 @@
-import { useNavigate, useParams } from "react-router-dom"
-import { Back } from "../components/Back"
-import BookMark from "../components/BookMark"
-import Like from "../components/Like"
-import { TopBar2 } from "../components/Topbar"
-import { useEffect, useState } from "react"
-import axios from "axios"
-import { useAuthCheck } from "../customHook/useAuthCheck"
-import { useRecoilValue } from "recoil"
-import { tokenAtom } from "../atoms/tokenAt"
-import LoadingPage from "../components/LoadingPage"
-
+import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { Link, useParams } from "react-router-dom";
+import remarkGfm from "remark-gfm";
+import BookMark from "../components/BookMark";
+import Like from "../components/Like";
+import { TopBar2 } from "../components/Topbar";
+import { api } from "../lib/api";
+import type { Comment, Post, Revision } from "../types";
 
 export default function Blog(){
-    //const navigate=useNavigate()
-    // useEffect(()=>{
-    //     const fetchUserData=async ()=>{
-    //         if (!localStorage.getItem("jwtToken")){
-    //             navigate("/")
-    //         }
-    //         try{
-    //             const response = await axios.get(
-    //                 "https://backend.akshitgangwar02.workers.dev/api/v1/user/me",
-    //                 {
-    //                     headers:{
-    //                         Authorization:`Bearer ${localStorage.getItem("jwtToken")}`
-    //                     }
-    //                 }
-    //             )
-    //             if (response.status!==200){
-    //                 console.log(response.data.msg)
-    //                 navigate("/")
-    //             }
-    //         }catch(error){
-    //             console.error("Error fetching user data", error);
-    //             navigate("/")
-    //         }
-    //     }
-    //     fetchUserData()
-    // },[navigate])
-    useAuthCheck()
-    const { blogId }=useParams()
-    const token=useRecoilValue(tokenAtom)
-    const [error,setError]=useState("")
-    const [loading,setLoading]=useState(true)
-    const [blog,setBlog]=useState(null)
-    const navigate=useNavigate()
-    useEffect(()=>{
-        const fetchBlog=async ()=>{
-            try{
-                const response=await axios.get(`https://backend.akshitgangwar02.workers.dev/api/v1/blog?id=${blogId}`,{
-                    headers:{
-                        Authorization: `Bearer ${token}`
-                    }
-                })
-                setBlog(response.data.post)
-            }catch(error){
-                setError("Failed to fetch blog")
-                console.error("Error fetching blog:", error)
-            }finally{
-                setLoading(false)
-            }
+  const { slug, blogId } = useParams();
+  const postSlug = slug ?? blogId ?? "";
+  const [blog, setBlog] = useState<Post | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [revisions, setRevisions] = useState<Revision[]>([]);
+  const [comment, setComment] = useState("");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBlog = async () => {
+      setLoading(true);
+      try {
+        const response = await api.postBySlug(postSlug);
+        setBlog(response.post);
+        const [commentResponse, revisionResponse] = await Promise.allSettled([
+          api.comments(response.post.id),
+          api.revisions(response.post.id),
+        ]);
+        if (commentResponse.status === "fulfilled") {
+          setComments(commentResponse.value.comments);
         }
-        fetchBlog()
-    },[blogId])
-    if (loading) return (<div className="h-screen flex flex-col justify-center">
-        <div className="flex justify-center">
-            <LoadingPage></LoadingPage>
-        </div>
-    </div>)
-    return <div className="bg-customColor h-screen w-screen">
-        <TopBar2></TopBar2>
-        <div><Back onClick={()=>navigate("/blogs")}></Back></div>
-        <div className=" md:flex justify-stretch">
-            <div className="w-3/5 h-4/5 ml-20 mr-40 mb-32 mt-20  space-y-4">
-                <div className="mb-10">
-                    <div className="text-4xl font-sans font-bold pb-16 sm:text-4xl md:text-6xl">{blog.title}</div>
-                    <div className="flex-col">
-                        <div className="border-y-2 border-customGray flex justify-between  py-2">
-                            <div className="flex justify-start space-x-6 ml-4">
-                                <div><Like></Like></div>
-                                <div>
-                                    <div className="group relative">
-                                        <button>
-                                            <svg className="w-6 h-6 hover:scale-125 duration-200 hover:stroke-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path fill="none" d="M0 0h24v24H0z" stroke="none"></path>
-                                            <path d="M8 9h8"></path>
-                                            <path d="M8 13h6"></path>
-                                            <path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="mr-4"><BookMark></BookMark></div>
-                        </div>
-                    </div>
-                </div>
-                <div className="mt-2">
-                    <div className="text-lg md:text-2xl font-serif font-thin text-slate-700">{blog.subTitle}</div>
-                    <div className="mb-12 mt-12 ">Image</div>
-                    <div className="text-base md:text-xl font-medium font-serif">{blog.content}</div>
-                </div>
-                <div>
-                
-                </div>
+        if (revisionResponse.status === "fulfilled") {
+          setRevisions(revisionResponse.value.revisions);
+        }
+        void api.readingProgress(response.post.id, 15);
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Failed to fetch article");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (postSlug) {
+      void fetchBlog();
+    }
+  }, [postSlug]);
+
+  const toggleLike = async () => {
+    if (!blog) {
+      return;
+    }
+    const next = blog.likedByViewer ? await api.unlikePost(blog.id) : await api.likePost(blog.id);
+    setBlog({
+      ...blog,
+      likedByViewer: next.liked,
+      _count: {
+        comments: blog._count?.comments ?? 0,
+        bookmarks: blog._count?.bookmarks ?? 0,
+        likes: Math.max(0, (blog._count?.likes ?? 0) + (next.liked ? 1 : -1)),
+      },
+    });
+  };
+
+  const toggleBookmark = async () => {
+    if (!blog) {
+      return;
+    }
+    const next = blog.bookmarkedByViewer ? await api.unbookmarkPost(blog.id) : await api.bookmarkPost(blog.id);
+    setBlog({ ...blog, bookmarkedByViewer: next.bookmarked });
+  };
+
+  const addComment = async () => {
+    if (!blog || !comment.trim()) {
+      return;
+    }
+    const response = await api.addComment(blog.id, comment);
+    setComments((items) => [...items, response.comment]);
+    setComment("");
+  };
+
+  const saveNote = async () => {
+    if (blog) {
+      await api.savePrivateNote(blog.id, note);
+    }
+  };
+
+  const saveSelection = async () => {
+    const selectedText = window.getSelection()?.toString().trim();
+    if (blog && selectedText) {
+      await api.addHighlight(blog.id, selectedText);
+    }
+  };
+
+  if (loading) {
+    return <div className="grid min-h-screen place-items-center bg-[#fffaf0]">Loading article...</div>;
+  }
+
+  if (error || !blog) {
+    return <div className="grid min-h-screen place-items-center bg-[#fffaf0] text-red-700">{error || "Article not found"}</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-[#fffaf0] text-stone-950">
+      <TopBar2 />
+      <main className="mx-auto grid max-w-7xl gap-8 px-5 py-8 lg:grid-cols-[minmax(0,760px)_320px]">
+        <article className="rounded border border-stone-200 bg-white p-6 shadow-sm">
+          {blog.coverImageUrl && <img src={blog.coverImageUrl} alt="" className="mb-8 aspect-[16/9] w-full rounded object-cover" />}
+          <div className="mb-6">
+            <div className="mb-3 flex flex-wrap gap-2">
+              {blog.tags?.map((tag) => (
+                <Link key={tag.slug} to={`/tag/${tag.slug}`} className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">
+                  {tag.name}
+                </Link>
+              ))}
             </div>
-            <div className=" flex-col mt-20 w-1/5 h-32 mr-12 border-y-2 border-customGray rounded-lg ml-6">
-                <div className="flex justify-center">
-                    <div className="mt-6"><button><div className="rounded-xl text-3xl font-semibold font-sans bg-gray-800 text-white px-2 py-2 mt-1 h-14 w-14 ">A</div></button></div>
-                    <div className="flex-col justify-start mt-6 ml-5 space-y-2">
-                        <div className="text-xl md:text-3xl font-semibold">Author</div>
-                        <div className="text-lg font-light  font-mono text-gray-600">Author username</div>
-                    </div>
-                </div>
+            <h1 className="font-serif text-5xl leading-tight">{blog.title}</h1>
+            <p className="mt-3 text-xl text-stone-600">{blog.subTitle}</p>
+            <div className="mt-5 flex items-center gap-3 text-sm text-stone-500">
+              <Link to={`/u/${blog.author?.userName ?? ""}`} className="font-semibold text-stone-900">
+                {blog.author?.firstName ?? "Learning writer"}
+              </Link>
+              <span>{blog.readingTime} min read</span>
+              {revisions.length > 0 && <span>Updated {revisions.length} time{revisions.length > 1 ? "s" : ""}</span>}
             </div>
-        </div>
+          </div>
+
+          <div className="mb-8 flex items-center justify-between border-y border-stone-200 py-3">
+            <Like active={Boolean(blog.likedByViewer)} count={blog._count?.likes ?? 0} onToggle={() => void toggleLike()} />
+            <button onClick={() => void saveSelection()} className="rounded border border-stone-300 px-3 py-2 text-sm font-semibold">
+              Save highlight
+            </button>
+            <BookMark active={Boolean(blog.bookmarkedByViewer)} onToggle={() => void toggleBookmark()} />
+          </div>
+
+          <div className="prose prose-stone max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{blog.content}</ReactMarkdown>
+          </div>
+
+          <section className="mt-10 border-t border-stone-200 pt-6">
+            <h2 className="font-serif text-3xl">Conversation</h2>
+            <div className="mt-4 flex gap-2">
+              <input value={comment} onChange={(event) => setComment(event.target.value)} className="flex-1 rounded border border-stone-300 px-3 py-2 outline-none focus:border-stone-950" placeholder="Add a thoughtful comment" />
+              <button onClick={() => void addComment()} className="rounded bg-stone-950 px-4 py-2 text-sm font-semibold text-amber-200">Post</button>
+            </div>
+            <div className="mt-5 space-y-3">
+              {comments.map((item) => (
+                <div key={item.id} className="rounded border border-stone-200 bg-[#fffaf0] p-4">
+                  <div className="text-sm font-semibold">{item.author.firstName}</div>
+                  <p className="mt-1 text-stone-700">{item.content}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </article>
+
+        <aside className="space-y-5">
+          <section className="rounded border border-stone-200 bg-white p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-stone-500">Private note</p>
+            <textarea value={note} onChange={(event) => setNote(event.target.value)} className="mt-3 min-h-40 w-full rounded border border-stone-200 p-3 text-sm outline-none focus:border-stone-950" placeholder="What should future-you remember?" />
+            <button onClick={() => void saveNote()} className="mt-3 rounded bg-stone-950 px-4 py-2 text-sm font-semibold text-amber-200">Save note</button>
+          </section>
+          <section className="rounded border border-stone-200 bg-white p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-stone-500">Revision timeline</p>
+            <div className="mt-4 space-y-3">
+              {revisions.length ? revisions.map((revision) => (
+                <div key={revision.id} className="border-l-2 border-amber-300 pl-3">
+                  <div className="font-semibold">Version {revision.version}</div>
+                  <div className="text-sm text-stone-600">{revision.changeNote ?? "Article updated"}</div>
+                </div>
+              )) : <p className="text-sm text-stone-600">No revisions yet. This article is still in its first life.</p>}
+            </div>
+          </section>
+        </aside>
+      </main>
     </div>
+  );
 }

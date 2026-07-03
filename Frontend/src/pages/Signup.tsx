@@ -8,7 +8,9 @@ export default function Signup(){
     return <div>
         <div className="min-h-screen bg-customColor space-y-4">
             <Topbar1 label={'Signup'}></Topbar1>
-            <Onboarding fxn={null} type={'Signup'}></Onboarding>
+            <div className="flex justify-center px-5 py-12">
+                <Onboarding type={'Signup'}></Onboarding>
+            </div>
             <BottomBar></BottomBar>
         </div>        
     </div>
