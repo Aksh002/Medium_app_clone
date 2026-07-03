@@ -3,7 +3,7 @@ import { useState } from 'react';
 import styled from 'styled-components';
 
 interface PublishProps {
-  draft: (id: string | null) => Promise<string>,
+  draft: (id: string | null) => Promise<string | undefined>,
   publish: (id: string) => Promise<void>;
 }
 
@@ -16,7 +16,9 @@ const Publish = ({draft,publish}:PublishProps) => {
     try {
       const existingId=localStorage.getItem("currentBlogId")?localStorage.getItem("currentBlogId"):null
       const blogId = await draft(existingId);
-      await publish(blogId);
+      if (blogId) {
+        await publish(blogId);
+      }
     } catch (error) {
       console.error('Publish failed:', error);
     } finally {

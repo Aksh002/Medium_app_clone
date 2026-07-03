@@ -1,7 +1,6 @@
-import React from 'react';
 import styled from 'styled-components';
 interface draftType{
-  draft: (existingId:string | null) => Promise<string>
+  draft: (existingId:string | null) => Promise<string | undefined>
 }
 const SaveDraft = ({draft}:draftType) => {
   return (

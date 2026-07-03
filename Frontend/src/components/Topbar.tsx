@@ -4,12 +4,25 @@ import Button from "./Button"
 import Publish from "./Publish"
 import { Link } from "react-router-dom"
 import DropDown from "./DropDown"
-import { motion,AnimatePresence } from "framer-motion"
 import { useSetRecoilState } from "recoil"
 import { viewDraftAtom } from "../atoms/draftsAtom"
 import { viewMyBlogsAtom } from "../atoms/myBlogsAtom"
 
-export const Topbar=({modelOpened,newUser})=>{
+type PublicTopbarProps = {
+    modelOpened: () => void;
+    newUser: (value: boolean) => void;
+};
+
+type TopbarLabelProps = {
+    label: "Signup" | "Signin";
+};
+
+type EditorTopbarProps = {
+    draft: (existingId: string | null) => Promise<string | undefined>;
+    publish: (blogId: string) => Promise<void>;
+};
+
+export const Topbar=({modelOpened,newUser}: PublicTopbarProps)=>{
     return <div className="border-b-2 border-black">
         <div className="flex-col p-2 sm:p-6 ml-2 sm:ml-6 sm:mr-6">
             <div className="flex justify-between">
@@ -29,7 +42,7 @@ export const Topbar=({modelOpened,newUser})=>{
     </div>
 }
 
-export const Topbar1=({label})=>{
+export const Topbar1=({label}: TopbarLabelProps)=>{
     return <div className="border-b-2 border-black">
         <div className="flex-col p-2 sm:p-6 ml-2 sm:ml-6 sm:mr-6">
             <div className="flex justify-between">
@@ -72,7 +85,7 @@ export const TopBar2=()=>{
 
 
 
-export const TopBar3=({draft,publish})=>{
+export const TopBar3=({draft,publish}: EditorTopbarProps)=>{
     return <div>
         <div className="border-b-2 border-black">
             <div className="flex-col p-2 sm:p-4 ml-2 sm:ml-6 mr-6">
