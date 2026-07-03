@@ -1,13 +1,21 @@
-export const InputBox=({label,set})=>{
-    return <div>
-        <label className="block mb-2 text-sm font-normal sm:font-medium text-white">{label}</label>
-        <input onChange={(e)=>set(e.target.value)} className="font-sans max-w-[400px] sm:max-w-[1000px] p-2 sm:p-3.5 text-base border-[1.5px] border-black rounded-md shadow-[2.5px_3px_0_black] outline-none transition ease duration-200 focus:shadow-[5.5px_7px_0_black]" />
-    </div>
-}
+type InputBoxProps = {
+  label: string;
+  set: (value: string) => void;
+  type?: string;
+  value?: string;
+  placeholder?: string;
+};
 
-
-export const InputBox2=()=>{
-    return <div>
-        
-    </div>
-}
+export const InputBox = ({ label, set, type = "text", value, placeholder }: InputBoxProps) => (
+  <label className="block">
+    <span className="mb-1 block text-sm font-semibold text-stone-200">{label}</span>
+    <input
+      value={value}
+      onChange={(event) => set(event.target.value)}
+      type={type}
+      placeholder={placeholder}
+      className="block w-full rounded border border-stone-700 bg-stone-900 px-3 py-2 text-sm text-stone-50 outline-none transition focus:border-amber-300"
+      required
+    />
+  </label>
+);

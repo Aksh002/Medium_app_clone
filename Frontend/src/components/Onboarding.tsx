@@ -1,196 +1,91 @@
-import { Link, useNavigate } from "react-router-dom"
-import { InputBox } from "./InputBox"
-import { useState } from "react";
-import Submit from "./Submit";
-import { useSetRecoilState,useRecoilState, useRecoilValue } from "recoil";
-import { signupAtom,signupSelector } from "../atoms/signupAt";
-import { tokenAtom } from "../atoms/tokenAt";
-import axios from "axios";
+import { FormEvent, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useSetRecoilState } from "recoil";
 import { loaderAtom } from "../atoms/loaderAt";
-import Loader from "./Loader";
-import LoadingPage from "./LoadingPage";
+import { tokenAtom } from "../atoms/tokenAt";
+import { api } from "../lib/api";
+import { InputBox } from "./InputBox";
+import Submit from "./Submit";
 
-// interface Props{
-//     label:string;
-//     placeholder:string;
-//     onchange:(e:ChangeEvent<HTMLInputElement>)=>void;
-// }
 interface Props {
-    type: string;
-    fxn: (isSignin: boolean) => void;
-}
-export const Onboarding=({type,fxn}:Props)=>{
-    const [email,setEmail]=useState("")
-    const [password,setPassword]=useState("")
-    const [userName,setUserName]=useState("")
-    const [firstName,setFirstName]=useState("")
-    const [token,setToken]=useRecoilState(tokenAtom)
-    const [error,setError]=useState("")
-    //const [signup,setSignup]=useRecoilState(signupAtom)
-    //const token:string=useRecoilValue(signupSelector)
-    const [loader,setLoader]=useRecoilState(loaderAtom)
-    const navigate=useNavigate()
-    
-
-    const SubmitFxn=async ()=>{
-        
-        
-        try {
-            // Make the API request manually instead of using a selector
-            if ( type=="Signup" && email!="" && password!="" && userName!="" && firstName!=""){
-                const response = await axios.post(
-                    "https://backend.akshitgangwar02.workers.dev/api/v1/user/signup",
-                    {
-                        email,
-                        userName,
-                        firstName,
-                        password
-                    },
-                    {
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    }
-                );
-                if (response.data.token) {
-                    setToken(response.data.token);  // Store token in state
-                    localStorage.setItem("jwtToken", response.data.token);
-                    navigate("/Blogs");
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    setLoader(false)
-                }
-                else{
-                    setLoader(false)
-                    setError(`Signup Failed ${response.data.msg}`)
-                }
-            }
-            else if (type=="Signin" && email!="" && password!="" ){
-                const response = await axios.post(
-                    "https://backend.akshitgangwar02.workers.dev/api/v1/user/signin",
-                    {
-                        email,
-                        password,
-                    },
-                    {
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    }
-                );
-                if (response.data.token) {
-                    setToken(response.data.token);  // Store token in state
-                    localStorage.setItem("jwtToken", response.data.token);
-                    navigate("/Blogs");
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    setLoader(false)
-                }
-                else{
-                    setLoader(false)
-                    setError(`Signup Failed ${response.data.msg}`)
-                }
-            }
-            else{
-                setLoader(false)
-                setError("A value is missing");
-            }            
-        } catch (err) {
-            setLoader(false)
-            setError(`Signup failed:${err}`)
-        }
-    }
-
-    return <div >
-        <div className={`relative ${loader ? "overflow-hidden" : ""}`}>
-        {fxn?(<div className="flex justify-center">
-                <div className="flex-col justify-center  p-10 sm:p-16 mb-3 mt-3 rounded-3xl  bg-gradient-to-b from-gray-700 via-gray-500 to-gray-400 border-black shadow-2xl  shadow-black">
-                    <div className="font-serif text-lg sm:text-3xl flex justify-center text-white mb-3 sm:mb-6 font-normal sm:font-medium  rounded-lg">{type==='Signin'?<span>WELCOME!!</span>:<span>JOIN US</span>}</div>
-                    <div className="ml-2 space-y-3 sm:space-y-3">
-                        <InputBox set={setEmail} label="Email"></InputBox>
-                        {type==='Signin'?<div></div>:<InputBox set={setUserName} label={"User Name"}></InputBox>}
-                        <InputBox set={setPassword} label="Password"></InputBox>
-                        {type==='Signin'?<div></div>:<InputBox set={setFirstName} label={"What should we call u"}></InputBox>}
-                        <div className="flex justify-center pt-2 pr-4"><Submit onClick={SubmitFxn}></Submit></div>
-                    </div>
-                    {type==='Signup'?(
-                        <div className="flex space-x-1 mt-2">
-                            <div className="text-white text-sm font-thin font-mono mt-1">Alresdy have an account?</div>
-                            <div className="text-black underline " ><button onClick={()=>fxn(true)} >Signin</button></div>
-                        </div>
-                        ):(
-                        <div className="flex space-x-1 mt-2">
-                            <div className="text-white text-sm font-thin font-mono mt-1">New Here?</div>
-                            <div className="text-black underline"><button onClick={()=>fxn(false)}>Signup</button></div>
-                        </div>)
-                    }
-                    <div>{error?<div>{error}</div>:<div/>}</div>
-                </div>
-            </div>
-        )
-        :
-        (<div>
-        <div className="flex justify-center">
-                <div className="flex-col justify-center space-y-2 sm:space-y-3 p-10 sm:p-16 mb-3 mt-3 rounded-3xl  bg-gradient-to-b from-gray-700 via-gray-500 to-gray-400 border-black shadow-xl shadow-gray-400">
-                    <div className="font-serif text-lg sm:text-3xl flex justify-center text-white mb-3 sm:mb-6 font-normal sm:font-medium  rounded-lg">{type==='Signin'?<span>WELCOME!!</span>:<span>JOIN US</span>}</div>
-                    <InputBox set={setEmail} label="Email"></InputBox>
-                    {type==='Signin'?<div></div>:<InputBox set={setUserName} label={"User Name"}></InputBox>}
-                    <InputBox set={setPassword} label="Password"></InputBox>
-                    {type==='Signin'?<div></div>:<InputBox set={setFirstName} label={"What should we call u"}></InputBox>}
-                    <div className="flex justify-center pt-2 pr-4"><Submit onClick={SubmitFxn}></Submit></div>
-                    {type==='Signup'?(
-                        <div className="flex space-x-1">
-                            <div className="text-white text-sm font-thin font-mono mt-1">Alresdy have an account?</div>
-                            <div className="text-black underline " ><Link to={'/signin'}>Signin</Link></div>
-                        </div>
-                        ):(
-                        <div className="flex space-x-1">
-                            <div className="text-white text-sm font-thin font-mono mt-1">New Here?</div>
-                            <div className="text-black underline"><Link to={'/signup'}>Signup</Link></div>
-                        </div>)
-                        }
-                </div>
-            </div>
-    </div>)
-    }
-    </div>
-    </div>
+  type: "Signup" | "Signin";
+  fxn?: (isSignin: boolean) => void;
 }
 
-export const Onboarding1=({type})=>{
-    const [email,setEmail]=useState("")
-    const [password,setPassword]=useState("")
-    const [userName,setUserName]=useState("")
-    const [firstName,setFirstName]=useState("")
-    const [token,setToken]=useRecoilState(tokenAtom)
-    //const [signup,setSignup]=useRecoilState(signupAtom)
-    //const token:string=useRecoilValue(signupSelector)
+export const Onboarding = ({ type, fxn }: Props) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [userName, setUserName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const setLoader = useSetRecoilState(loaderAtom);
+  const setToken = useSetRecoilState(tokenAtom);
+  const navigate = useNavigate();
 
-    const navigate=useNavigate()
-    
+  const submit = async (event?: FormEvent) => {
+    event?.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+    setLoader(true);
 
-    const SubmitFxn=async ()=>{
-        
-        
-        try {
-            // Make the API request manually instead of using a selector
-            const response = await axios.post(
-                "https://backend.akshitgangwar02.workers.dev/api/v1/user/signup",
-                {
-                    email,
-                    userName,
-                    firstName,
-                    password
-                }
-            );
-
-            if (response.data.token) {
-                setToken(response.data.token);  // Store token in state
-                localStorage.setItem("jwtToken", response.data.token);
-                navigate("/Blogs");
-            }
-        } catch (error) {
-            console.error("Signup failed:", error);
-        }
+    try {
+      const token =
+        type === "Signup"
+          ? await api.signup({ email, password, userName, firstName })
+          : await api.signin({ email, password });
+      setToken(token);
+      await api.me();
+      navigate("/blogs", { replace: true });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Authentication failed");
+    } finally {
+      setIsSubmitting(false);
+      setLoader(false);
     }
+  };
 
-    return 
-}
+  return (
+    <form
+      onSubmit={submit}
+      className="w-full max-w-md rounded bg-stone-950 p-8 text-stone-50 shadow-2xl shadow-stone-950/30"
+    >
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">
+          {type === "Signup" ? "Start learning in public" : "Welcome back"}
+        </p>
+        <h2 className="mt-2 text-3xl font-serif">{type === "Signup" ? "Create your desk" : "Open your desk"}</h2>
+      </div>
+
+      <div className="space-y-4">
+        <InputBox set={setEmail} label="Email" type="email" />
+        {type === "Signup" && <InputBox set={setUserName} label="User name" />}
+        <InputBox set={setPassword} label="Password" type="password" />
+        {type === "Signup" && <InputBox set={setFirstName} label="Display name" />}
+      </div>
+
+      {error && <div className="mt-4 rounded border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-100">{error}</div>}
+
+      <div className="mt-6">
+        <Submit onClick={() => undefined} disabled={isSubmitting} label={isSubmitting ? "Working..." : type} />
+      </div>
+
+      <div className="mt-5 text-sm text-stone-300">
+        {type === "Signup" ? "Already have an account? " : "New here? "}
+        {fxn ? (
+          <button
+            type="button"
+            className="font-semibold text-amber-300 underline-offset-4 hover:underline"
+            onClick={() => fxn(type === "Signup")}
+          >
+            {type === "Signup" ? "Signin" : "Signup"}
+          </button>
+        ) : (
+          <Link className="font-semibold text-amber-300 underline-offset-4 hover:underline" to={type === "Signup" ? "/signin" : "/signup"}>
+            {type === "Signup" ? "Signin" : "Signup"}
+          </Link>
+        )}
+      </div>
+    </form>
+  );
+};

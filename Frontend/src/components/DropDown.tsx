@@ -1,9 +1,8 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSetRecoilState } from 'recoil';
 import styled from 'styled-components';
 import { tokenAtom } from "../atoms/tokenAt"
-import { draftsAtom, viewDraftAtom } from '../atoms/draftsAtom';
+import { viewDraftAtom } from '../atoms/draftsAtom';
 import { viewMyBlogsAtom } from '../atoms/myBlogsAtom';
 const DropDown = () => {
     const navigate=useNavigate()
