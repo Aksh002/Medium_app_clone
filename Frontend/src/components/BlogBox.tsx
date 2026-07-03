@@ -1,7 +1,11 @@
-import React from 'react';
 import styled from 'styled-components';
 
-const BlogBox1 = ({fxn,props}) => {
+type BlogBoxProps = {
+  fxn: (value: string) => void;
+  props?: string;
+};
+
+const BlogBox1 = ({fxn,props}: BlogBoxProps) => {
   return (
     <StyledWrapper>
       <div className="group">
@@ -103,7 +107,7 @@ const StyledWrapper = styled.div`
 
 
 
-  const BlogBox2 = ({fxn,props}) => {
+  const BlogBox2 = ({fxn,props}: BlogBoxProps) => {
     return (
       <StyledWrapper2>
         <div className="group">
@@ -200,7 +204,7 @@ const StyledWrapper = styled.div`
   }
 `;
 
-const BlogBox3 = ({fxn}) => {
+const BlogBox3 = ({fxn}: Pick<BlogBoxProps, "fxn">) => {
   return (
     <StyledWrapper3>
       <textarea

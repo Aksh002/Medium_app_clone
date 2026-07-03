@@ -1,17 +1,11 @@
-import { useRecoilValue } from "recoil"
-import BookMark from "./BookMark"
-import Like from "./Like"
-import { blogsAtomFamily } from "../atoms/blogsAtom"
-import { useInView } from "framer-motion"
-//import { div } from "framer-motion/client"
-import Skeleton from "react-loading-skeleton"
-import "react-loading-skeleton/dist/skeleton.css"
-import { div } from "framer-motion/client"
-import { useState,useEffect } from "react"
-import { Link } from "react-router-dom"
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import { Link } from "react-router-dom";
+import type { Post } from "../types";
+import BookMark from "./BookMark";
+import Like from "./Like";
 
-export const BlogPrev=({blog})=>{
-    console.log(blog)
+export const BlogPrev=({blog}: { blog?: Post })=>{
     if (!blog) {
         return (
           <div className="p-4 bg-gray-200 rounded-lg">
@@ -25,20 +19,20 @@ export const BlogPrev=({blog})=>{
         <div >
             <div className="flex justify-center">
                 <div className="w-4/5 sm:w-1/2 border-b-2 border-t-2 mt-2 border-slate-200">
-                    <Link to={`/blog/${blog.id}`}>
+                    <Link to={blog.slug ? `/p/${blog.slug}` : `/blog/${blog.id}`}>
                         <div className="flex justify-between px-4 py-6">
                             <div>
                                 <div className="flex-col">
                                     <div className="flex justify-start space-x-2">
                                         <button><div className="rounded-full text-sm font-semibold font-sans bg-gray-800 text-white px-2 sm:px-2.5 py-1 mt-1">A</div></button>
-                                        <div className="mt-3 font-extralight font-mono text-gray-400">Akshit Gangwar</div>
+                                        <div className="mt-3 font-extralight font-mono text-gray-400">{blog.author?.firstName ?? "Learning writer"}</div>
                                     </div>
                                 </div>
                                 <div className="text-2xl sm:text-4xl font-bold font-serif tracking-tighter pt-5">{blog.title}</div>
                                 <div className="text-base sm:text-lg font-normal text-slate-500 font-sans pt-1">{blog.subTitle}</div>
                                 <div className="flex-col">
                                         <div className="flex justify-start space-x-2 sm:space-x-4 mt-8">
-                                            <Like></Like>
+                                            <Like active={Boolean(blog.likedByViewer)} count={blog._count?.likes ?? 0}></Like>
                                             <div className="group relative mt-1">
                                                 <button>
                                                     <svg className="w-6 h-6 hover:scale-125 duration-200 hover:stroke-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -55,7 +49,7 @@ export const BlogPrev=({blog})=>{
                             <div className=" flex justify-end">
                                 <div>Image</div>
                                 <div className="ml-8">
-                                    <BookMark></BookMark>
+                                    <BookMark active={Boolean(blog.bookmarkedByViewer)}></BookMark>
                                 </div>
                             </div>
                         </div>
