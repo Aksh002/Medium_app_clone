@@ -8,11 +8,15 @@ const User = new Hono<{ Bindings: { DATABASE_URL: string , JWT_SECRET: string}  
 
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
-import { sign,verify,decode } from "hono/jwt";
-import { z } from "zod";
+import { sign,verify } from "hono/jwt";
 import { generateSalt, hashPswd, verifyPswd } from "../hashPswdLogic";
 import { userSchema } from "@akshit_gangwar/medium-common-v2/dist/sharedZod";
 import { loginSchema } from "@akshit_gangwar/medium-common-v2/dist/sharedZod";
+
+type JwtPayload = {
+  id?: unknown;
+  email?: unknown;
+};
 
 //                                        Prisma MIDDLEWARE
 // User.use('*',async (c,next) => {
@@ -160,9 +164,9 @@ User.get('/me',async (c) => {
     }
 
     try{
-      const decoded=await verify(token,c.env.JWT_SECRET)
+      const decoded=(await verify(token,c.env.JWT_SECRET)) as JwtPayload
 
-      if (!decoded || !decoded.email) {
+      if (typeof decoded.id !== "string" || typeof decoded.email !== "string") {
         c.status(401)
         return c.json({
             msg: "Invalid token payload"
@@ -176,17 +180,17 @@ User.get('/me',async (c) => {
       const user=await prisma.users.findUnique({
         where:{
           id: decoded.id,
-          email: decoded.email
         },
         select:{
-          hashPass:false,
           id: true,
           email: true,
           userName: true,
           firstName: true,
+          bio: true,
+          avatarUrl: true,
         }
       })
-      if (!user) {
+      if (!user || user.email !== decoded.email) {
         c.status(404)
         return c.json({
             msg: "User not found"
