@@ -1,15 +1,6 @@
-//import { useState } from 'react'
 import './App.css'
-// import { Signup } from "./pages/Signup"
-// import { Signin } from "./pages/Signin"
-//import { Blogs } from "./pages/Blogs"
 import { BrowserRouter,Route,Routes } from 'react-router-dom' 
-//import { FrontPage } from './pages/FrontPage'
-//import { Draft } from './pages/Draft'
-//import { Blog } from './pages/Blog'
-import { lazy, Suspense, useState } from 'react'
-//import { Membership } from './pages/Membership'
-//import { AboutUs } from './pages/AboutUs'
+import { lazy, Suspense } from 'react'
 import { RecoilRoot } from 'recoil'
 import LoadingPage from './components/LoadingPage'
 const FrontPage=lazy(()=>import('./pages/FrontPage'))
@@ -21,10 +12,13 @@ const Draft=lazy(()=>import('./pages/Draft'))
 const Blog=lazy(()=>import('./pages/Blog'))
 const Membership=lazy(()=>import('./pages/Membership'))
 const AboutUs=lazy(()=>import('./pages/AboutUs'))
+const Profile=lazy(()=>import('./pages/Profile'))
+const Library=lazy(()=>import('./pages/Library'))
+const Series=lazy(()=>import('./pages/Series'))
+const Challenges=lazy(()=>import('./pages/Challenges'))
+const Tag=lazy(()=>import('./pages/Tag'))
 
 function App() {
-  //const [count, setCount] = useState(0)
-  // const { login,setLogin }=  useState(false)
   return (
     <div>
       <RecoilRoot> {/* Wrap the entire app with RecoilRoot */}
@@ -37,7 +31,15 @@ function App() {
               <Route path='/blogs' element={<Blogs />} />
               <Route path='/dashboard' element={<Dashboard />} />
               <Route path='/draft' element={<Draft />} />
+              <Route path='/write' element={<Draft />} />
               <Route path='/blog/:blogId' element={<Blog />} />
+              <Route path='/p/:slug' element={<Blog />} />
+              <Route path='/u/:userName' element={<Profile />} />
+              <Route path='/library' element={<Library />} />
+              <Route path='/series/:slug' element={<Series />} />
+              <Route path='/challenges' element={<Challenges />} />
+              <Route path='/challenges/:slug' element={<Challenges />} />
+              <Route path='/tag/:tag' element={<Tag />} />
               <Route path='/membership' element={<Membership />} />
               <Route path='/aboutUs' element={<AboutUs />} />
             </Routes>
