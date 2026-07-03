@@ -1,14 +1,6 @@
-import { atom, selector } from "recoil";
+import { atom } from "recoil";
 
-
-export const loaderAtom=atom({
-    key:"loaderAtom",
-    default:false
-})
-
-// export const loaderSelector=selector({
-//     key:"loaderSelector",
-//     get:({get})=>{
-//         const loaderState
-//     }
-// })
+export const loaderAtom = atom<boolean>({
+  key: "loaderAtom",
+  default: false,
+});

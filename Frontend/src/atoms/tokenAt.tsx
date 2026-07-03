@@ -1,9 +1,7 @@
-import { atom, selector } from "recoil";
-import axios from "axios";
-import { useNavigate } from "react-router-dom"
+import { atom } from "recoil";
 
-export const tokenAtom=atom({
-    key:'tokenAtom',
-    default:localStorage.getItem("jwtToken")
-})
+export const tokenAtom = atom<string>({
+  key: "tokenAtom",
+  default: localStorage.getItem("jwtToken") ?? "",
+});
 
