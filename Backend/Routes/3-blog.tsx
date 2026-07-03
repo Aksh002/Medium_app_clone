@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
 import { blogSchema } from "@akshit_gangwar/medium-common-v2/dist/sharedZod";
 import { blogUPDschema } from "@akshit_gangwar/medium-common-v2/dist/sharedZod"
+import { readingTime, uniqueSlug } from "./utils";
 //import { blogUPDschema } from "@akshit_gangwar/medium-common/dist/sharedZod"
 
 const Blog = new Hono<{ 
@@ -88,6 +89,8 @@ Blog.post('/',async  (c) => {
             title: body.title?body.title:"....Empty....",
             subTitle: body.subTitle?body.subTitle:"....Empty....",
             content: body.content?body.content:"....Empty....",
+            slug: await uniqueSlug(c.var.prisma, body.title?body.title:"Untitled learning note"),
+            readingTime: readingTime(body.content?body.content:"....Empty...."),
             authorId: id
         }
     })
@@ -112,7 +115,9 @@ Blog.post('/:id',async (c) => {
             authorId:userId
         },
         data:{
-            published:true
+            published:true,
+            status:"PUBLISHED",
+            publishedAt:new Date()
         }
     })
     if (!post){
@@ -171,7 +176,8 @@ Blog.put('/:id',async (c) => {
         data:{
             title:body.title?body.title:old.title,
             subTitle: body.subTitle?body.subTitle:old.subTitle,
-            content: body.content?body.content:old.content
+            content: body.content?body.content:old.content,
+            readingTime: readingTime(body.content?body.content:old.content)
         }
     })
 
@@ -213,7 +219,7 @@ Blog.get('/',async (c) => {
 Blog.get('/bulk',async (c) => {
     const allPost= await c.var.prisma.posts.findMany({
         where:{
-            published:true
+            status:"PUBLISHED"
         }
     })
     if (!allPost){
@@ -253,7 +259,7 @@ Blog.get('/myPosts',async (c) => {
     const  userId=c.get('userId')
     const myPost= await c.var.prisma.posts.findMany({
         where:{
-            published:true,
+            status:"PUBLISHED",
             authorId:userId
         }
     })
@@ -271,7 +277,7 @@ Blog.get('/mySavedPosts',async (c) => {
     const  userId=c.get('userId')
     const myPost= await c.var.prisma.posts.findMany({
         where:{
-            published:true,
+            status:"PUBLISHED",
             authorId:userId
         }
     })
@@ -289,7 +295,7 @@ Blog.get('/drafts',async (c) => {
     const  userId=c.get('userId')
     const myPost= await c.var.prisma.posts.findMany({
         where:{
-            published:false,
+            status:"DRAFT",
             authorId:userId
         }
     })
