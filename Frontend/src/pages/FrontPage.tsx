@@ -1,13 +1,11 @@
-import { useState,useEffect } from "react"
+import { useState } from "react"
 import { BottomBar } from "../components/BottomBar"
 import { SignupButton1 } from "../components/SignupButton"
 import { Topbar } from "../components/Topbar"
 import { Onboarding } from "../components/Onboarding"
-import { useNavigate } from "react-router-dom"
-import axios from "axios"
 import { useAuthCheckRev } from "../customHook/useAuthCheckRev"
 import LoadingPage from "../components/LoadingPage"
-import { useRecoilState } from "recoil"
+import { useRecoilValue } from "recoil"
 import { loaderAtom } from "../atoms/loaderAt"
 import { motion,AnimatePresence } from "framer-motion"
 
@@ -20,36 +18,7 @@ export default function FrontPage(){
     const modelClosed=()=>setIsModelOpen(false)
     const toggleUserState = (isSignin: boolean) => setNewUser(!isSignin)
     
-    const [loader,setLoader]=useRecoilState(loaderAtom)
-  //const navigate = useNavigate()
-
-  //   useEffect(()=>{
-  //     const fetchUserData=async ()=>{
-  //         if (!localStorage.getItem("jwtToken")){
-  //             navigate("/")
-  //         }
-  //         try{
-  //             const response = await axios.get(
-  //                 "https://backend.akshitgangwar02.workers.dev/api/v1/user/me",
-  //                 {
-  //                     headers:{
-  //                         Authorization:`Bearer ${localStorage.getItem("jwtToken")}`
-  //                     }
-  //                 }
-  //             )
-  //             if (response.status==200){
-  //                 localStorage.setItem("Username",response.data.user.userName)
-  //                 localStorage.setItem("FirstName",response.data.user.firstName)
-  //                 localStorage.setItem("FirstName",response.data.user.email)
-  //                 navigate("/blogs")
-  //             }
-  //         }catch(error){
-  //             console.error("Error fetching user data", error);
-  //             navigate("/")
-  //         }
-  //     }
-  //     fetchUserData()
-  // },[navigate])
+    const loader=useRecoilValue(loaderAtom)
   useAuthCheckRev()
 
     return(<div>
@@ -59,10 +28,10 @@ export default function FrontPage(){
             <div className="pb-12 flex justify-between mb-24 lg:mb-0">
                 <div className="ml-16 flex-col justify-start space-y-5 sm:space-y-9">
                     <div className="text-3xl sm:text-5xl lg:text-9xl  font-serif font-semibold sm:font-thin mt-40">
-                        <div>Human </div>
-                        <div>Stories & Ideas</div>
+                        <div>Learning </div>
+                        <div>That Stays Alive</div>
                     </div>
-                    <div className="text-base sm:text-2xl font-light" >A place to read, write, and deepen your understanding</div>
+                    <div className="text-base sm:text-2xl font-light" >Write build logs, living articles, and learning paths in public.</div>
                     <div className={`${ isModelOpen ? "blur-sm" : "" }`} transition-all duration-300><SignupButton1 fxn={setIsModelOpen}></SignupButton1></div>
                 </div>
             </div>
