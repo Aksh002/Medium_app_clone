@@ -1,110 +1,79 @@
-import { useEffect } from "react"
-import { BlogPrev } from "../components/BlogPrev"
-import { TopBar2 } from "../components/Topbar"
-import axios from "axios"
-import { useNavigate } from "react-router-dom"
-import { useAuthCheck } from "../customHook/useAuthCheck"
-import { useRecoilRefresher_UNSTABLE, useRecoilState, useRecoilValue, useSetRecoilState } from "recoil"
-import { blogsAtom, blogsFetchSelector, blogsIdAtom } from "../atoms/blogsAtom"
-import { motion,AnimatePresence } from "framer-motion"
-import { draftsAtom, viewDraftAtom } from "../atoms/draftsAtom"
-import { myBlogsAtom, viewMyBlogsAtom } from "../atoms/myBlogsAtom"
-import { Back } from "../components/Back"
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { BlogPrev } from "../components/BlogPrev";
+import { TopBar2 } from "../components/Topbar";
+import { useAuthGuard, useDrafts, useMyPosts, usePosts } from "../hooks";
 
 export default function Blogs(){
-    
-    useAuthCheck()  // Checks for token
-    //const blogsIds=useRecoilValue(blogsIdAtom)
-    const fetchBlogs=useRecoilValue(blogsAtom) // Trigger fetching
-    console.log(fetchBlogs)
-    // Fetch blogs on component mount
-    // useEffect(() => {
-    //     setFetchBlogs;
-    // },[]);
-    
-    const fetchDrafts=useRecoilValue(draftsAtom)
-    const [viewDraft,setViewDraft]=useRecoilState(viewDraftAtom)
-    const fetchMyBlogs=useRecoilValue(myBlogsAtom)
-    const [viewMyBlogs,setViewMyBlogs]=useRecoilState(viewMyBlogsAtom)
-    //const refreshMyBlogs = useRecoilRefresher_UNSTABLE(myBlogsAtom);
+  const { checking } = useAuthGuard();
+  const [view, setView] = useState<"feed" | "drafts" | "mine">("feed");
+  const feed = usePosts();
+  const drafts = useDrafts();
+  const mine = useMyPosts();
 
-    // useEffect(() => {
-    //     if (viewMyBlogs) {
-    //       refreshMyBlogs(); // Force re-fetch blogs when viewMyBlogs changes
-    //     }
-    //   }, [viewMyBlogs]);
-    
-    if (!fetchBlogs.length) return <div>Loading blogs...</div>;
-    return <div className="min-h-screen bg-white">
-        <div>
-        <AnimatePresence>
-            <motion.div                         
-             initial={{ opacity: 0 }}
-             animate={{ opacity: 1 }}
-             exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+  const current = useMemo(() => {
+    if (view === "drafts") {
+      return drafts;
+    }
+    if (view === "mine") {
+      return mine;
+    }
+    return feed;
+  }, [drafts, feed, mine, view]);
+
+  if (checking) {
+    return <div className="grid min-h-screen place-items-center bg-[#fffaf0]">Checking your session...</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-[#fffaf0] text-stone-950">
+      <TopBar2 />
+      <main className="mx-auto max-w-7xl px-5 py-8">
+        <section className="mb-8 grid gap-6 border-b border-stone-200 pb-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-amber-700">Learning in public</p>
+            <h1 className="mt-3 max-w-3xl font-serif text-5xl leading-tight md:text-7xl">
+              Articles that keep growing after publish.
+            </h1>
+          </div>
+          <div className="self-end rounded border border-stone-200 bg-white p-5">
+            <p className="text-sm leading-7 text-stone-600">
+              Use Ledger as a public workbench: write Markdown notes, publish build logs, collect revisions, and shape posts into learning paths.
+            </p>
+            <Link to="/write" className="mt-5 inline-block rounded bg-stone-950 px-5 py-3 text-sm font-semibold text-amber-200">
+              Write today&apos;s note
+            </Link>
+          </div>
+        </section>
+
+        <div className="mb-6 flex flex-wrap gap-2">
+          {(["feed", "drafts", "mine"] as const).map((item) => (
+            <button
+              key={item}
+              onClick={() => setView(item)}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold capitalize ${
+                view === item ? "border-stone-950 bg-stone-950 text-amber-200" : "border-stone-300 bg-white"
+              }`}
             >
-                <motion.div                                             
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.9 }}
-                >
-                    <TopBar2></TopBar2>
-                    {(viewDraft)?<div><Back onClick={setViewDraft}></Back></div>:<div></div>}
-                    {(viewMyBlogs)?<div><Back onClick={setViewMyBlogs}></Back></div>:<div></div>}
-                </motion.div>
-            </motion.div>
-        </AnimatePresence>
+              {item === "mine" ? "My posts" : item}
+            </button>
+          ))}
         </div>
-        <div className="mt-8 flex-col space-y-8">
-            <motion.div className="mt-8 flex-col space-y-8"
-                        initial="hidden"
-                        animate="visible"
-                        variants={{
-                        hidden: { opacity: 0 },
-                        visible: {
-                            opacity: 1,
-                            transition: { staggerChildren: 0.2 }, // Staggered effect
-                        },
-                        }}
-            >
-                {(!viewDraft && !viewMyBlogs)?<div>
-                    {fetchBlogs.map((blog,id)=>
-                    <motion.div 
-                    variants={{
-                        hidden: { opacity: 0, y: 1000 },
-                        visible: { opacity: 1, y: 0, transition: { duration: 1.5 } },
-                      }}
-                    >
-                        <BlogPrev key={id} blog={blog}></BlogPrev>
-                    </motion.div>
-                )}
-                </div>:<div></div>}
-                {viewDraft && <div>{
-                    fetchDrafts.map((blog,id)=>
-                    <motion.div 
-                    variants={{
-                        hidden: { opacity: 0, y: 1000 },
-                        visible: { opacity: 1, y: 0, transition: { duration: 1.5 } },
-                      }}
-                    >
-                        <BlogPrev key={id} blog={blog}></BlogPrev>
-                    </motion.div>
-                )
-                    }</div>}
-                {viewMyBlogs && <div>{
-                    fetchMyBlogs.map((blog,id)=>
-                    <motion.div 
-                    variants={{
-                        hidden: { opacity: 0, y: 1000 },
-                        visible: { opacity: 1, y: 0, transition: { duration: 1.5 } },
-                      }}
-                    >
-                        <BlogPrev key={id} blog={blog}></BlogPrev>
-                    </motion.div>
-                )
-                    }</div>}
-            </motion.div>
-        </div>
+
+        {current.error && <div className="rounded border border-red-200 bg-red-50 p-4 text-red-700">{current.error}</div>}
+        {current.loading ? (
+          <div className="rounded border border-stone-200 bg-white p-8">Loading the reading desk...</div>
+        ) : current.data.length ? (
+          <div className="space-y-5">
+            {current.data.map((blog) => <BlogPrev key={blog.id} blog={blog} />)}
+          </div>
+        ) : (
+          <div className="rounded border border-dashed border-stone-300 bg-white p-10 text-center">
+            <h2 className="font-serif text-3xl">Nothing here yet.</h2>
+            <p className="mt-2 text-stone-600">A fresh notebook is not a problem. It is an invitation.</p>
+          </div>
+        )}
+      </main>
     </div>
+  );
 }
