@@ -1,175 +1,152 @@
-# Medium-Style Serverless Blogging application 
+# Learning-in-Public Serverless Blogging Platform
 
-Medium_app_clone is a three-part TypeScript codebase that recreates the core flow of a Medium-style blogging app:
+This project started as a Medium-style blogging clone and is evolving into a learning-in-public writing platform. The goal is to make articles more than static posts: writers can publish Markdown-first learning artifacts, organize them into series, keep drafts alive through revisions, and give readers tools such as bookmarks, comments, highlights, private notes, reading history, and discovery feeds.
 
-- a React + Vite frontend for authentication, blog browsing, and drafting
-- a Hono API intended to run on Cloudflare Workers
-- a shared schema package used to keep frontend inputs and backend validation aligned
+The app is built as a TypeScript multi-package repository with a React frontend, a Hono API deployed to Cloudflare Workers, Prisma-backed PostgreSQL storage, and shared Zod schemas for request validation.
 
-The project is organized as a simple multi-package repository, but it is not wired up as an npm workspace. Each package is installed and run independently.
+## Product Direction
 
-## High-Level Architecture
+The platform is designed for developers, students, and builders who want to document what they are learning in public.
+
+Core ideas:
+
+- Markdown-first writing with live preview
+- drafts, publishing, and author-owned post updates
+- public post pages with unique slugs
+- tags, comments, likes, bookmarks, follows, and profile pages
+- series and learning paths instead of only standalone posts
+- revision history so posts can become living knowledge artifacts
+- reader library with bookmarks, highlights, private notes, and reading history
+- discovery through search, tags, trending feed, following feed, and challenges
+- future optional AI writing support that suggests improvements without overwriting author content
+
+## Architecture
 
 ```text
-Frontend (React, Vite, Recoil, Tailwind, styled-components)
-    -> calls
+Frontend (React, Vite, TypeScript, Tailwind, Recoil)
+    -> typed API client using VITE_API_BASE_URL
 Backend (Hono on Cloudflare Workers, Prisma Accelerate, PostgreSQL)
-    -> validates with
-Common (shared Zod schemas and inferred TypeScript types)
+    -> validates requests with shared schemas
+Common (Zod schemas and inferred TypeScript types)
 ```
 
-Authentication is JWT-based. After signup or signin, the frontend stores the token in `localStorage` under `jwtToken` and mirrors it into Recoil state. Most of the app then uses that token to call protected blog routes.
+Authentication is JWT-based. After signup or signin, the frontend stores the token in `localStorage` as `jwtToken` and uses it for protected API calls. The backend validates JWTs at the edge and resolves the current user before allowing private operations.
 
-## Repository Index
+## Repository Layout
 
 ```text
 .
 |-- Backend/
 |   |-- Routes/
-|   |   |-- 1-main.tsx        # API sub-router composition
-|   |   |-- 2-user.tsx        # signup, signin, token verification
-|   |   `-- 3-blog.tsx        # create, publish, edit, fetch, delete blog routes
+|   |   |-- 1-main.tsx       # API router composition
+|   |   |-- 2-user.tsx       # signup, signin, /me
+|   |   |-- 3-blog.tsx       # legacy blog routes kept for compatibility
+|   |   |-- 4-posts.tsx      # modern posts, drafts, comments, likes, notes
+|   |   |-- 5-users.tsx      # profiles and follows
+|   |   |-- 6-series.tsx     # learning series APIs
+|   |   |-- 7-platform.tsx   # search, feeds, library, challenges
+|   |   `-- utils.ts         # auth, Prisma, response helpers
 |   |-- db/prisma/
-|   |   |-- schema.prisma     # PostgreSQL schema for users and posts
-|   |   `-- migrations/       # initial schema migration
-|   |-- hashPswdLogic.ts      # salted SHA-256 password hashing using Web Crypto
-|   |-- src/index.ts          # Hono app entrypoint + CORS + /api/v1 router mount
-|   `-- package.json          # Wrangler dev/deploy scripts
+|   |   |-- schema.prisma    # PostgreSQL domain model
+|   |   `-- migrations/      # Prisma migrations
+|   |-- hashPswdLogic.ts     # salted SHA-256 password hashing
+|   |-- src/index.ts         # Worker entrypoint, CORS, /api/v1 mount
+|   `-- package.json
 |-- Common/
-|   |-- src/sharedZod.ts      # shared Zod schemas + inferred TS types
-|   `-- package.json          # package metadata for @akshit_gangwar/medium-common-v2
+|   |-- src/sharedZod.ts     # shared Zod schemas and TS types
+|   `-- package.json
 |-- Frontend/
-|   |-- src/App.tsx           # route table and lazy-loaded pages
-|   |-- src/pages/            # route-level UI pages
-|   |-- src/components/       # reusable UI pieces
-|   |-- src/atoms/            # Recoil atoms/selectors for auth and blog data
-|   |-- src/customHook/       # auth guard hooks
-|   |-- tailwind.config.js    # custom colors and background image config
-|   `-- package.json          # Vite dev/build/lint scripts
-`-- README.md                 # this technical overview
+|   |-- src/App.tsx          # route table
+|   |-- src/lib/api.ts       # frontend API client
+|   |-- src/hooks.ts         # feature data hooks
+|   |-- src/types.ts         # frontend domain types
+|   |-- src/pages/           # route-level pages
+|   |-- src/components/      # reusable UI components
+|   `-- package.json
+`-- README.md
 ```
 
 ## Backend
 
 ### Stack
 
-- `hono` for HTTP routing and middleware
-- `@prisma/client/edge` with `@prisma/extension-accelerate` for DB access on edge/runtime-friendly deployments
-- Cloudflare Workers via `wrangler`
-- PostgreSQL as the database
-- `hono/jwt` for signing and verifying JWTs
+- Hono for routing and middleware
+- Cloudflare Workers via Wrangler
+- Prisma Client Edge with Prisma Accelerate
+- PostgreSQL
+- JWT authentication through `hono/jwt`
+- Zod validation through the shared Common package
 
-### Entry Point
+### API Surface
 
-`Backend/src/index.ts` creates a Hono app, enables permissive CORS, and mounts the versioned router at `/api/v1`.
+Base path: `/api/v1`
 
-Important backend traits:
+User routes:
 
-- CORS currently allows `origin: "*"`
-- `Authorization` is accepted as a CORS header
-- the code expects `DATABASE_URL` and `JWT_SECRET` bindings in the Worker environment
-- comments refer to `wrangler.toml`, but that file is not present in the checked-in repo
+- `POST /user/signup`
+- `POST /user/signin`
+- `GET /user/me`
 
-### User Routes
+Modern post routes:
 
-Mounted at `/api/v1/user`:
+- `GET /posts` - public published feed
+- `GET /posts/:slug` - public post detail
+- `GET /posts/drafts` - authenticated draft list
+- `GET /posts/mine` - authenticated author posts
+- `POST /posts` - create draft
+- `PUT /posts/:id` - update own post
+- `POST /posts/:id/publish` - publish own post
+- `POST /posts/:id/like` and `DELETE /posts/:id/like`
+- `POST /posts/:id/bookmark` and `DELETE /posts/:id/bookmark`
+- `GET /posts/:id/comments` and `POST /posts/:id/comments`
+- `GET /posts/:id/revisions`
+- `POST /posts/:id/reading-progress`
+- `GET /posts/:id/highlights`, `POST /posts/:id/highlights`, `DELETE /posts/:id/highlights/:highlightId`
+- `GET /posts/:id/private-note`, `PUT /posts/:id/private-note`
 
-- `POST /signup`
-  - validates input with `userSchema`
-  - checks if the email already exists
-  - hashes the password
-  - creates a `Users` row
-  - returns a signed JWT
-- `POST /signin`
-  - validates input with `loginSchema`
-  - looks up the user by email
-  - verifies the stored salted hash
-  - returns a signed JWT
-- `GET /me`
-  - expects `Authorization: Bearer <token>`
-  - verifies the token
-  - fetches the current user
-  - returns user profile data excluding password hash
+User and community routes:
 
-### Blog Routes
+- `GET /users/:userName`
+- `PUT /users/me/profile`
+- `POST /users/:userName/follow`
+- `DELETE /users/:userName/follow`
+- `GET /search?q=`
+- `GET /feed/trending`
+- `GET /feed/following`
+- `GET /notifications`
+- `POST /reports`
 
-Mounted at `/api/v1/blog`.
+Series, library, and challenge routes:
 
-Two middleware layers run on all blog endpoints:
+- `GET /series`
+- `POST /series`
+- `PUT /series/:id`
+- `POST /series/:id/posts`
+- `DELETE /series/:id/posts/:postId`
+- `GET /series/:slug`
+- `GET /library`
+- `GET /library/export`
+- `GET /challenges`
+- `GET /challenges/:slug`
+- `POST /challenges/:slug/entries`
+- `GET /tag/:tag`
 
-- JWT auth middleware that extracts and verifies the bearer token, then stores `userId` in the Hono context
-- Prisma middleware that instantiates a Prisma client and stores it in the Hono context
-
-Implemented routes:
-
-- `POST /`
-  - creates a new draft post for the authenticated user
-- `POST /:id`
-  - marks the authenticated user's post as `published: true`
-- `PUT /:id`
-  - updates an existing unpublished post owned by the authenticated user
-- `GET /?id=<postId>`
-  - fetches a single post by id
-- `GET /bulk`
-  - fetches all published posts
-- `DELETE /:id`
-  - deletes a post owned by the authenticated user
-- `GET /myPosts`
-  - fetches the authenticated user's published posts
-- `GET /mySavedPosts`
-  - currently returns the same dataset as `myPosts`
-- `GET /drafts`
-  - fetches the authenticated user's unpublished posts
-
-Important behavioral detail: because auth middleware is attached to `Blog.use('/*', ...)`, even read routes like `GET /bulk` and `GET /?id=` require a valid bearer token.
+Legacy `/blog` routes are still present so older frontend flows and URLs can keep working while the app moves to the richer `/posts` model.
 
 ### Data Model
 
-`Backend/db/prisma/schema.prisma` defines two models:
+The Prisma schema now models a fuller blogging and learning platform:
 
-#### `Users`
-
-- `id: String @id @default(uuid())`
-- `email: String`
-- `userName: String`
-- `firstName: String`
-- `hashPass: String`
-- `posts: Posts[]`
-
-#### `Posts`
-
-- `id: String @id @default(uuid())`
-- `title: String`
-- `subTitle: String`
-- `content: String`
-- `published: Boolean @default(false)`
-- `authorId: String`
-- relation back to `Users`
-
-Notable schema caveat: `email` is not marked `@unique` in Prisma, so uniqueness is enforced only in application logic during signup.
-
-### Password Storage
-
-`Backend/hashPswdLogic.ts` generates a random salt with Web Crypto and stores passwords as:
-
-```text
-<salt>:<sha256(password + salt)>
-```
-
-This is functional, but it is lighter than a purpose-built password hashing algorithm such as Argon2 or bcrypt.
-
-## Common Package
-
-`Common/src/sharedZod.ts` contains the shared schemas:
-
-- `userSchema`
-- `loginSchema`
-- `blogSchema`
-- `blogUPDschema`
-
-It also exports inferred TypeScript types from those schemas. The package name is `@akshit_gangwar/medium-common-v2`.
-
-One important repo detail: both frontend and backend import the published package name from `node_modules`, while this repository also includes a local `Common/` copy of the same package. That means the local folder documents the schema source, but the app is not currently using a formal workspace link.
+- `Users` with unique email and username, profile fields, timestamps, and relations
+- `Posts` with slug, cover image, status, reading time, timestamps, and Markdown content
+- `Tags` and `PostTags`
+- `Comments`, including reply support
+- `Likes`, `Bookmarks`, and `Follows`
+- `PostRevisions` for living article history
+- `ReadingHistory` for progress and resume-reading features
+- `Series` and `SeriesPosts`
+- `Highlights` and `PrivateNotes`
+- `Notifications`, `Reports`, `Challenges`, `ChallengeEntries`, and `AiSuggestions`
 
 ## Frontend
 
@@ -184,138 +161,47 @@ One important repo detail: both frontend and backend import the published packag
 - Tailwind CSS
 - styled-components
 - Framer Motion
-- react-loading-skeleton
+- react-markdown and remark-gfm for Markdown rendering
 
-### Routing
+### Main Routes
 
-`Frontend/src/App.tsx` lazy-loads all route pages:
+- `/` - landing page
+- `/signup` and `/signin` - authentication
+- `/blogs` - published feed
+- `/dashboard` - author dashboard
+- `/draft` and `/write` - Markdown writing flow
+- `/blog/:blogId` - legacy post detail route
+- `/p/:slug` - public slug-based post page
+- `/u/:userName` - public profile page
+- `/library` - reader library
+- `/series/:slug` - learning path page
+- `/challenges` and `/challenges/:slug`
+- `/tag/:tag`
 
-- `/` -> landing page
-- `/signup` -> standalone signup page
-- `/signin` -> standalone signin page
-- `/blogs` -> main blog feed
-- `/dashboard` -> dashboard placeholder route
-- `/draft` -> blog editor / draft composer
-- `/blog/:blogId` -> single blog page
-- `/membership` -> placeholder page
-- `/aboutUs` -> placeholder page
-
-### Page Responsibilities
-
-- `FrontPage.tsx`
-  - marketing-style landing page
-  - opens auth modal
-  - uses `useAuthCheckRev` to redirect already logged-in users to `/blogs`
-- `Signup.tsx` and `Signin.tsx`
-  - wrap the same `Onboarding` component in full-page form layouts
-- `Blogs.tsx`
-  - authenticated route
-  - loads blog lists from Recoil async selectors
-  - toggles between all blogs, drafts, and "my blogs" views
-- `Blog.tsx`
-  - authenticated route
-  - fetches one blog by id
-  - displays placeholder author/avatar/image data
-- `Draft.tsx`
-  - authenticated route
-  - lets the user enter title, subtitle, and content
-  - supports saving as draft and publishing
-  - stores the active draft id in `localStorage` as `currentBlogId`
-- `Dashboard.tsx`
-  - fetches dashboard datasets but does not yet render a complete dashboard
-- `Membership.tsx` and `AboutUs.tsx`
-  - placeholder content pages
-
-### State Management
-
-The main Recoil atoms/selectors are:
-
-- `tokenAtom`
-  - initialized from `localStorage.getItem("jwtToken")`
-- `loaderAtom`
-  - controls the auth-loading overlay
-- `blogsAtom`
-  - async selector-backed atom that loads `/blog/bulk`
-- `draftsAtom`
-  - async selector-backed atom that loads `/blog/drafts`
-- `myBlogsAtom`
-  - async selector-backed atom that loads `/blog/myPosts`
-- `viewDraftAtom`
-  - toggles the feed into drafts mode
-- `viewMyBlogsAtom`
-  - toggles the feed into "my blogs" mode
-
-### Auth Flow in the UI
-
-`Frontend/src/components/Onboarding.tsx` handles both signup and signin.
-
-- signup posts to `/api/v1/user/signup`
-- signin posts to `/api/v1/user/signin`
-- on success, the JWT is stored in Recoil and `localStorage`
-- users are then navigated to `/Blogs`
-
-Two custom hooks enforce auth behavior:
-
-- `useAuthCheck`
-  - for protected pages
-  - redirects to `/` if the token is missing or invalid
-- `useAuthCheckRev`
-  - for public auth-entry pages
-  - redirects authenticated users to `/blogs`
-  - also writes `userName`, `firstName`, and `email` into `localStorage`
-
-### Styling and UX
-
-The frontend mixes utility classes and component-scoped CSS:
-
-- Tailwind supplies layout and theming primitives
-- `tailwind.config.js` defines:
-  - `customColor: #F7F4ED`
-  - `customYellow: #f9ebce`
-  - `customGray`
-  - `customGray2`
-- `src/index.css` adds a `paper.png` background utility for the draft page
-- styled-components powers animated buttons, loaders, dropdowns, like/bookmark controls, and other decorative UI pieces
-- Framer Motion is used for page transitions, modal animation, and list entrance effects
-
-### API Coupling
-
-The frontend does not use environment variables for the API base URL. It directly calls:
-
-```text
-https://backend.akshitgangwar02.workers.dev/api/v1/...
-```
-
-This means local frontend development is currently coupled to that deployed backend unless the source is edited.
+The frontend now uses a central API client in `Frontend/src/lib/api.ts`, which reads the backend URL from `VITE_API_BASE_URL`. This avoids scattering hardcoded Worker URLs throughout the UI.
 
 ## Current Feature Coverage
 
-### Working Core Flows
+Implemented or scaffolded:
 
-- user signup
-- user signin
-- JWT verification
-- create draft
-- update draft while unpublished
-- publish draft
-- list published posts
-- list current user's published posts
-- list current user's drafts
-- open a post detail page
-- logout / account switching UI
+- signup, signin, and authenticated `/me` checks
+- draft creation, draft updates, publishing, and public post feeds
+- Markdown editor flow with preview-oriented dependencies
+- slug-based posts and profile routes
+- likes, bookmarks, comments, follows, tags, and series APIs
+- revision, reading progress, highlights, private notes, library, search, feeds, notifications, reports, and challenge APIs
+- Cloudflare Worker deployment configuration with secrets kept outside Git
 
-### Partially Implemented or Placeholder Areas
+Still early-stage:
 
-- dashboard UI is not finished
-- membership/about pages are placeholders
-- bookmark and like interactions are present as UI widgets only; there is no persistence in the backend schema
-- `mySavedPosts` is not a real saved-posts feature yet
-- blog author info and images are hardcoded placeholders in the feed/detail UI
-- there is no uploaded media flow
+- some advanced product surfaces are scaffolded and need deeper UI polish
+- analytics and AI-assisted writing are represented in the model/roadmap but not yet a finished user-facing workflow
+- media upload/storage is not implemented yet
+- the Common package exists locally but the apps still import the published package rather than a formal workspace link
 
 ## Local Development
 
-Because this repo is not configured as a root workspace, install and run each app separately.
+This repository is not configured as a root npm workspace. Install dependencies inside each package.
 
 ### Frontend
 
@@ -325,7 +211,13 @@ npm install
 npm run dev
 ```
 
-Other scripts:
+Create `Frontend/.env` if you need to point the UI at a specific backend:
+
+```env
+VITE_API_BASE_URL=http://127.0.0.1:8787/api/v1
+```
+
+Useful scripts:
 
 ```bash
 npm run build
@@ -341,16 +233,45 @@ npm install
 npm run dev
 ```
 
-Deploy script:
+Required Worker secrets:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+
+Set production secrets with Wrangler:
+
+```bash
+npx wrangler secret put DATABASE_URL
+npx wrangler secret put JWT_SECRET
+```
+
+Deploy:
 
 ```bash
 npm run deploy
 ```
 
-Expected backend environment/bindings:
+`Backend/wrangler.toml` is intentionally ignored because deployment secrets must not be committed.
 
-- `DATABASE_URL`
-- `JWT_SECRET`
+### Database
+
+Prisma schema lives at `Backend/db/prisma/schema.prisma`.
+
+Generate Prisma client:
+
+```bash
+cd Backend
+npx prisma generate --schema db/prisma/schema.prisma
+```
+
+Apply migrations:
+
+```bash
+cd Backend
+npx prisma migrate deploy --schema db/prisma/schema.prisma
+```
+
+For local development, make sure the process has `DATABASE_URL` available before running Prisma commands.
 
 ### Common
 
@@ -359,28 +280,41 @@ cd Common
 npm install
 ```
 
-The `Common` package currently acts as the shared schema source/reference. It does not expose a real local build workflow in this repo.
+The Common package contains shared Zod schemas and inferred TypeScript types. A future improvement is to wire this repository as a real workspace so frontend and backend consume the local package directly.
 
-## Verification Snapshot
+## Verification
 
-I inspected the codebase and ran the available frontend verification commands.
+Use these checks before pushing changes:
 
-- `Frontend: npm run build` fails
-  - main causes: unused imports, implicit `any`, references to missing exports, invalid selector typing, and a hook used inside an async function
-- `Frontend: npm run lint` fails
-  - main causes: unused variables/imports and one hooks rule violation in `usePublish.tsx`
-- `Backend: npm run deploy` could not be validated in this environment
-  - `wrangler deploy` failed with `spawn EPERM` inside the sandbox
+```bash
+cd Backend
+npx tsc --noEmit
+```
 
-## Technical Debt and Risks Worth Knowing
+```bash
+cd Frontend
+npm run build
+npm run lint
+```
 
-- frontend type safety is incomplete in many files
-- API base URL is hardcoded throughout the frontend
-- backend read routes are authenticated, which may or may not match intended product behavior
-- user email uniqueness should ideally be enforced at the database level
-- password hashing should ideally use a dedicated password KDF
-- several components and routes still contain placeholder UI or incomplete product logic
+The latest stabilization pass fixed TypeScript and lint issues across the app, added the central API client, validated JWT payloads before Prisma lookups, and kept the existing signup, signin, feed, draft, publish, and post routes working.
+
+## Security Notes
+
+- Do not commit `.env`, `.dev.vars`, database URLs, JWT secrets, or `wrangler.toml`.
+- Store Cloudflare production secrets with `wrangler secret put`.
+- The current password hashing implementation uses salted SHA-256 through Web Crypto. It works for the current learning project, but a production-grade app should move to a dedicated password hashing strategy such as Argon2 or bcrypt through a deployment-compatible service or runtime.
+
+## Roadmap
+
+Near-term focus:
+
+- finish and polish the Markdown writing experience
+- make dashboard, library, profile, series, and challenge pages feel complete
+- improve tests around auth, ownership, private notes, idempotent likes/bookmarks, and slug uniqueness
+- add safer Markdown sanitization and richer revision comparison UI
+- introduce analytics and optional AI suggestions after the core product is stable
 
 ## Summary
 
-This repository is a Medium-inspired full-stack TypeScript app with a React frontend, a Hono + Prisma edge backend, and a shared Zod schema package. The core auth, drafting, publishing, and feed flows exist, but the project is still in an in-progress state with several unfinished features, hardcoded infrastructure assumptions, and TypeScript/lint issues that currently prevent a clean frontend build.
+This project is now moving from a basic Medium clone into a developer-focused learning-in-public platform. It keeps the original serverless architecture, edge JWT auth, Prisma/PostgreSQL persistence, and React/Vite frontend, while expanding the product into living articles, structured learning paths, reader knowledge tools, and community discovery.
