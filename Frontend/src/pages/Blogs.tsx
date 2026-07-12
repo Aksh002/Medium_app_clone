@@ -3,15 +3,24 @@ import { Link } from "react-router-dom";
 import { BlogPrev } from "../components/BlogPrev";
 import { TopBar2 } from "../components/Topbar";
 import { useAuthGuard, useDrafts, useMyPosts, usePosts } from "../hooks";
+import { api } from "../lib/api";
+import type { Post } from "../types";
 
 export default function Blogs(){
   const { checking } = useAuthGuard();
-  const [view, setView] = useState<"feed" | "drafts" | "mine">("feed");
+  const [view, setView] = useState<"feed" | "trending" | "following" | "drafts" | "mine" | "search">("feed");
+  const [query, setQuery] = useState("");
+  const [remotePosts, setRemotePosts] = useState<Post[]>([]);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const [remoteError, setRemoteError] = useState("");
   const feed = usePosts();
   const drafts = useDrafts();
   const mine = useMyPosts();
 
   const current = useMemo(() => {
+    if (view === "trending" || view === "following" || view === "search") {
+      return { data: remotePosts, loading: remoteLoading, error: remoteError };
+    }
     if (view === "drafts") {
       return drafts;
     }
@@ -19,7 +28,31 @@ export default function Blogs(){
       return mine;
     }
     return feed;
-  }, [drafts, feed, mine, view]);
+  }, [drafts, feed, mine, remoteError, remoteLoading, remotePosts, view]);
+
+  const loadDiscovery = async (nextView: typeof view) => {
+    setView(nextView);
+    if (nextView !== "trending" && nextView !== "following" && nextView !== "search") {
+      return;
+    }
+
+    setRemoteLoading(true);
+    setRemoteError("");
+    try {
+      const response =
+        nextView === "trending"
+          ? await api.trending()
+          : nextView === "following"
+            ? await api.following()
+            : await api.search(query);
+      setRemotePosts(response.posts);
+    } catch (caught) {
+      setRemoteError(caught instanceof Error ? caught.message : "Could not load feed");
+      setRemotePosts([]);
+    } finally {
+      setRemoteLoading(false);
+    }
+  };
 
   if (checking) {
     return <div className="grid min-h-screen place-items-center bg-[#fffaf0]">Checking your session...</div>;
@@ -47,10 +80,10 @@ export default function Blogs(){
         </section>
 
         <div className="mb-6 flex flex-wrap gap-2">
-          {(["feed", "drafts", "mine"] as const).map((item) => (
+          {(["feed", "trending", "following", "drafts", "mine"] as const).map((item) => (
             <button
               key={item}
-              onClick={() => setView(item)}
+              onClick={() => void loadDiscovery(item)}
               className={`rounded-full border px-4 py-2 text-sm font-semibold capitalize ${
                 view === item ? "border-stone-950 bg-stone-950 text-amber-200" : "border-stone-300 bg-white"
               }`}
@@ -58,6 +91,13 @@ export default function Blogs(){
               {item === "mine" ? "My posts" : item}
             </button>
           ))}
+        </div>
+
+        <div className="mb-6 flex max-w-2xl gap-2">
+          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-w-0 flex-1 rounded border border-stone-300 bg-white px-4 py-3 outline-none focus:border-stone-950" placeholder="Search title, content, tags, or writers" />
+          <button onClick={() => void loadDiscovery("search")} className="rounded bg-stone-950 px-5 py-3 text-sm font-semibold text-amber-200">
+            Search
+          </button>
         </div>
 
         {current.error && <div className="rounded border border-red-200 bg-red-50 p-4 text-red-700">{current.error}</div>}
