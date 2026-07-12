@@ -1,14 +1,19 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import type {
   ApiEnvelope,
+  AiSuggestion,
   Challenge,
+  ChallengeEntry,
   Comment,
   Library,
+  Notification,
   Post,
   PostInput,
   Revision,
   Series,
+  SeriesContext,
   User,
+  WriterAnalytics,
 } from "../types";
 
 const API_BASE_URL =
@@ -114,6 +119,7 @@ export const api = {
   updatePost: (id: string, input: Partial<PostInput>) =>
     unwrap<{ post: Post }>(client.put(`/posts/${id}`, input)),
   publishPost: (id: string) => unwrap<{ post: Post }>(client.post(`/posts/${id}/publish`)),
+  deletePost: (id: string) => unwrap<{ deleted: boolean }>(client.delete(`/posts/${id}`)),
   likePost: (id: string) => unwrap<{ liked: boolean }>(client.post(`/posts/${id}/like`)),
   unlikePost: (id: string) => unwrap<{ liked: boolean }>(client.delete(`/posts/${id}/like`)),
   bookmarkPost: (id: string) => unwrap<{ bookmarked: boolean }>(client.post(`/posts/${id}/bookmark`)),
@@ -121,7 +127,15 @@ export const api = {
   comments: (id: string) => unwrap<{ comments: Comment[] }>(client.get(`/posts/${id}/comments`)),
   addComment: (id: string, content: string) =>
     unwrap<{ comment: Comment }>(client.post(`/posts/${id}/comments`, { content })),
+  deleteComment: (id: string, commentId: string) =>
+    unwrap<{ deleted: boolean }>(client.delete(`/posts/${id}/comments/${commentId}`)),
   revisions: (id: string) => unwrap<{ revisions: Revision[] }>(client.get(`/posts/${id}/revisions`)),
+  seriesContext: (id: string) =>
+    unwrap<{ contexts: SeriesContext[] }>(client.get(`/posts/${id}/series-context`)),
+  revision: (id: string, version: number) =>
+    unwrap<{ revision: Revision }>(client.get(`/posts/${id}/revisions/${version}`)),
+  restoreRevision: (id: string, version: number) =>
+    unwrap<{ post: Post }>(client.post(`/posts/${id}/revisions/${version}/restore`)),
   readingProgress: (id: string, progress: number) =>
     unwrap<{ history: unknown }>(client.post(`/posts/${id}/reading-progress`, { progress })),
   highlights: (id: string) => unwrap<{ highlights: unknown[] }>(client.get(`/posts/${id}/highlights`)),
@@ -136,6 +150,8 @@ export const api = {
   privateNote: (id: string) => unwrap<{ note: unknown }>(client.get(`/posts/${id}/private-note`)),
   savePrivateNote: (id: string, content: string) =>
     unwrap<{ note: unknown }>(client.put(`/posts/${id}/private-note`, { content })),
+  deletePrivateNote: (id: string) =>
+    unwrap<{ deleted: boolean }>(client.delete(`/posts/${id}/private-note`)),
   profile: (userName: string) =>
     unwrap<{ user: User & { posts: Post[]; followedByViewer: boolean } }>(
       client.get(`/users/${userName}`),
@@ -143,11 +159,43 @@ export const api = {
   follow: (userName: string) => unwrap<{ following: boolean }>(client.post(`/users/${userName}/follow`)),
   unfollow: (userName: string) => unwrap<{ following: boolean }>(client.delete(`/users/${userName}/follow`)),
   series: () => unwrap<{ series: Series[] }>(client.get("/series")),
+  mySeries: () => unwrap<{ series: Series[] }>(client.get("/series/mine")),
   seriesBySlug: (slug: string) => unwrap<{ series: Series }>(client.get(`/series/${slug}`)),
   createSeries: (input: { title: string; description?: string }) =>
     unwrap<{ series: Series }>(client.post("/series", input)),
+  updateSeries: (id: string, input: { title?: string; description?: string; visibility?: "PUBLIC" | "PRIVATE" }) =>
+    unwrap<{ series: Series }>(client.put(`/series/${id}`, input)),
+  addSeriesPost: (id: string, input: { postId: string; order: number }) =>
+    unwrap<{ added: boolean }>(client.post(`/series/${id}/posts`, input)),
+  removeSeriesPost: (id: string, postId: string) =>
+    unwrap<{ removed: boolean }>(client.delete(`/series/${id}/posts/${postId}`)),
+  reorderSeries: (id: string, postIds: string[]) =>
+    unwrap<{ reordered: boolean }>(client.put(`/series/${id}/posts/reorder`, { postIds })),
   library: () => unwrap<Library>(client.get("/library")),
   challenges: () => unwrap<{ challenges: Challenge[] }>(client.get("/challenges")),
   challenge: (slug: string) => unwrap<{ challenge: Challenge }>(client.get(`/challenges/${slug}`)),
-  search: (query: string) => unwrap<{ posts: Post[]; users: User[]; tags: unknown[] }>(client.get(`/search?q=${encodeURIComponent(query)}`)),
+  myChallengeEntries: (slug: string) =>
+    unwrap<{ entries: ChallengeEntry[] }>(client.get(`/challenges/${slug}/entries/me`)),
+  submitChallengeEntry: (slug: string, input: { postId?: string; dayNumber: number }) =>
+    unwrap<{ entry: ChallengeEntry }>(client.post(`/challenges/${slug}/entries`, input)),
+  search: (query: string) =>
+    unwrap<{ posts: Post[]; users: User[]; tags: { name: string; slug: string }[] }>(
+      client.get(`/search?q=${encodeURIComponent(query)}`),
+    ),
+  trending: () => unwrap<{ posts: Post[] }>(client.get("/feed/trending")),
+  following: () => unwrap<{ posts: Post[] }>(client.get("/feed/following")),
+  notifications: () => unwrap<{ notifications: Notification[] }>(client.get("/notifications")),
+  markNotificationsRead: () => unwrap<{ read: boolean }>(client.put("/notifications/read")),
+  report: (input: { postId?: string; commentId?: string; reason: string }) =>
+    unwrap<{ report: unknown }>(client.post("/reports", input)),
+  writerAnalytics: () => unwrap<WriterAnalytics>(client.get("/analytics/writer")),
+  aiSuggestions: () => unwrap<{ suggestions: AiSuggestion[] }>(client.get("/ai-suggestions")),
+  createAiSuggestion: (input: {
+    postId?: string;
+    kind: string;
+    prompt?: string;
+    title: string;
+    content: string;
+    tags: string[];
+  }) => unwrap<{ suggestion: AiSuggestion }>(client.post("/ai-suggestions", input)),
 };

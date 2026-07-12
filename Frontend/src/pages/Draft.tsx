@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { TopBar2 } from "../components/Topbar";
 import { useAuthGuard } from "../hooks";
 import { api } from "../lib/api";
+import type { AiSuggestion } from "../types";
 
 export default function Draft(){
   const { checking } = useAuthGuard();
@@ -19,6 +20,8 @@ export default function Draft(){
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState("");
   const [dirty, setDirty] = useState(false);
+  const [suggestions, setSuggestions] = useState<AiSuggestion[]>([]);
+  const [suggesting, setSuggesting] = useState("");
 
   const tags = useMemo(
     () =>
@@ -67,6 +70,26 @@ export default function Draft(){
       navigate(`/p/${published.post.slug}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not publish post");
+    }
+  };
+
+  const askForSuggestion = async (kind: string) => {
+    setSuggesting(kind);
+    setError("");
+    try {
+      const response = await api.createAiSuggestion({
+        postId: postIdRef.current ?? undefined,
+        kind,
+        prompt: `Suggest ${kind} improvements for this draft.`,
+        title,
+        content,
+        tags,
+      });
+      setSuggestions((items) => [response.suggestion, ...items]);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not create suggestion");
+    } finally {
+      setSuggesting("");
     }
   };
 
@@ -141,8 +164,32 @@ export default function Draft(){
           <article className="prose prose-stone max-w-none">
             <h1>{title || "Untitled learning note"}</h1>
             {subTitle && <p className="lead">{subTitle}</p>}
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} skipHtml>{content}</ReactMarkdown>
           </article>
+
+          <div className="mt-8 border-t border-stone-200 pt-5">
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-stone-500">Optional writing assistant</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                ["title", "Title ideas"],
+                ["clarity", "Clarity critique"],
+                ["summary", "Summary"],
+                ["tags", "Tag ideas"],
+              ].map(([kind, label]) => (
+                <button key={kind} onClick={() => void askForSuggestion(kind)} className="rounded border border-stone-300 px-3 py-2 text-sm font-semibold">
+                  {suggesting === kind ? "Thinking..." : label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 space-y-3">
+              {suggestions.map((suggestion) => (
+                <div key={suggestion.id} className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                  <div className="font-semibold capitalize">{suggestion.kind}</div>
+                  <p className="mt-1">{suggestion.output}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
       </main>
     </div>
