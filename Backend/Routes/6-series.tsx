@@ -17,6 +17,10 @@ type SeriesPostBody = {
   order: number;
 };
 
+type SeriesReorderBody = {
+  postIds: string[];
+};
+
 SeriesRoute.use("*", prismaMiddleware);
 
 const uniqueSeriesSlug = async (
@@ -49,6 +53,32 @@ SeriesRoute.get("/", async (c) => {
     orderBy: { updatedAt: "desc" },
     include: {
       author: { select: { userName: true, firstName: true, avatarUrl: true } },
+      _count: { select: { posts: true } },
+    },
+  });
+
+  return c.json(ok({ series }));
+});
+
+SeriesRoute.get("/mine", authMiddleware, async (c) => {
+  const series = await c.var.prisma.series.findMany({
+    where: { authorId: c.get("userId") },
+    orderBy: { updatedAt: "desc" },
+    include: {
+      posts: {
+        orderBy: { order: "asc" },
+        include: {
+          post: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              status: true,
+              readingTime: true,
+            },
+          },
+        },
+      },
       _count: { select: { posts: true } },
     },
   });
@@ -130,6 +160,41 @@ SeriesRoute.post("/:id/posts", authMiddleware, async (c) => {
   });
 
   return c.json(ok({ added: true }));
+});
+
+SeriesRoute.put("/:id/posts/reorder", authMiddleware, async (c) => {
+  const body = await parseBody<SeriesReorderBody>(c);
+  const postIds = Array.isArray(body.postIds)
+    ? body.postIds.filter((item): item is string => typeof item === "string")
+    : [];
+
+  const series = await c.var.prisma.series.findFirst({
+    where: { id: c.req.param("id"), authorId: c.get("userId") },
+    include: { posts: { select: { postId: true } } },
+  });
+
+  if (!series) {
+    c.status(404);
+    return c.json(fail("Series not found", "NOT_FOUND"));
+  }
+
+  const current = new Set(series.posts.map((item) => item.postId));
+  const orderedIds = postIds.filter((postId) => current.has(postId));
+  const missingIds = series.posts.map((item) => item.postId).filter((postId) => !orderedIds.includes(postId));
+  const finalOrder = [...orderedIds, ...missingIds];
+
+  await c.var.prisma.seriesPosts.deleteMany({ where: { seriesId: series.id } });
+  for (const [index, postId] of finalOrder.entries()) {
+    await c.var.prisma.seriesPosts.create({
+      data: {
+        seriesId: series.id,
+        postId,
+        order: index + 1,
+      },
+    });
+  }
+
+  return c.json(ok({ reordered: true }));
 });
 
 SeriesRoute.delete("/:id/posts/:postId", authMiddleware, async (c) => {

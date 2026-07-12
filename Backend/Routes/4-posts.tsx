@@ -50,6 +50,31 @@ type NoteBody = {
   content: string;
 };
 
+const notify = async (
+  prisma: import("@prisma/client/edge").PrismaClient,
+  input: {
+    userId: string;
+    actorId?: string | null;
+    postId?: string | null;
+    type: "LIKE" | "BOOKMARK" | "COMMENT" | "REVISION";
+    message: string;
+  },
+) => {
+  if (input.userId === input.actorId) {
+    return;
+  }
+
+  await prisma.notifications.create({
+    data: {
+      userId: input.userId,
+      actorId: input.actorId ?? null,
+      postId: input.postId ?? null,
+      type: input.type,
+      message: input.message,
+    },
+  });
+};
+
 Posts.use("*", prismaMiddleware);
 
 Posts.get("/", async (c) => {
@@ -145,6 +170,14 @@ Posts.put("/:id", authMiddleware, async (c) => {
         changeNote: typeof body.changeNote === "string" ? body.changeNote : "Article updated",
       },
     });
+
+    await notify(c.var.prisma, {
+      userId: existing.authorId,
+      actorId: c.get("userId"),
+      postId: existing.id,
+      type: "REVISION",
+      message: `${existing.title} was updated.`,
+    });
   }
 
   const title = typeof body.title === "string" && body.title.trim() ? body.title.trim() : existing.title;
@@ -174,6 +207,19 @@ Posts.put("/:id", authMiddleware, async (c) => {
   });
 
   return c.json(ok({ post: normalizePost(post) }));
+});
+
+Posts.delete("/:id", authMiddleware, async (c) => {
+  const deleted = await c.var.prisma.posts.deleteMany({
+    where: { id: c.req.param("id"), authorId: c.get("userId") },
+  });
+
+  if (!deleted.count) {
+    c.status(404);
+    return c.json(fail("Post not found", "NOT_FOUND"));
+  }
+
+  return c.json(ok({ deleted: true }));
 });
 
 Posts.post("/:id/publish", authMiddleware, async (c) => {
@@ -279,10 +325,28 @@ Posts.post("/:id/reading-progress", authMiddleware, async (c) => {
 });
 
 Posts.post("/:id/like", authMiddleware, async (c) => {
+  const post = await c.var.prisma.posts.findUnique({
+    where: { id: c.req.param("id") },
+    select: { id: true, title: true, authorId: true },
+  });
+
+  if (!post) {
+    c.status(404);
+    return c.json(fail("Post not found", "NOT_FOUND"));
+  }
+
   await c.var.prisma.likes.upsert({
     where: { postId_userId: { postId: c.req.param("id"), userId: c.get("userId") } },
     update: {},
     create: { postId: c.req.param("id"), userId: c.get("userId") },
+  });
+
+  await notify(c.var.prisma, {
+    userId: post.authorId,
+    actorId: c.get("userId"),
+    postId: post.id,
+    type: "LIKE",
+    message: `Someone liked ${post.title}.`,
   });
 
   return c.json(ok({ liked: true }));
@@ -297,10 +361,28 @@ Posts.delete("/:id/like", authMiddleware, async (c) => {
 });
 
 Posts.post("/:id/bookmark", authMiddleware, async (c) => {
+  const post = await c.var.prisma.posts.findUnique({
+    where: { id: c.req.param("id") },
+    select: { id: true, title: true, authorId: true },
+  });
+
+  if (!post) {
+    c.status(404);
+    return c.json(fail("Post not found", "NOT_FOUND"));
+  }
+
   await c.var.prisma.bookmarks.upsert({
     where: { postId_userId: { postId: c.req.param("id"), userId: c.get("userId") } },
     update: {},
     create: { postId: c.req.param("id"), userId: c.get("userId") },
+  });
+
+  await notify(c.var.prisma, {
+    userId: post.authorId,
+    actorId: c.get("userId"),
+    postId: post.id,
+    type: "BOOKMARK",
+    message: `Someone saved ${post.title}.`,
   });
 
   return c.json(ok({ bookmarked: true }));
@@ -347,7 +429,38 @@ Posts.post("/:id/comments", authMiddleware, async (c) => {
     include: { author: { select: { userName: true, firstName: true, avatarUrl: true } } },
   });
 
+  const post = await c.var.prisma.posts.findUnique({
+    where: { id: c.req.param("id") },
+    select: { id: true, title: true, authorId: true },
+  });
+
+  if (post) {
+    await notify(c.var.prisma, {
+      userId: post.authorId,
+      actorId: c.get("userId"),
+      postId: post.id,
+      type: "COMMENT",
+      message: `New comment on ${post.title}.`,
+    });
+  }
+
   return c.json(ok({ comment }));
+});
+
+Posts.delete("/:id/comments/:commentId", authMiddleware, async (c) => {
+  const comment = await c.var.prisma.comments.findFirst({
+    where: { id: c.req.param("commentId"), postId: c.req.param("id") },
+    include: { post: { select: { authorId: true } } },
+  });
+
+  if (!comment || (comment.authorId !== c.get("userId") && comment.post.authorId !== c.get("userId"))) {
+    c.status(404);
+    return c.json(fail("Comment not found", "NOT_FOUND"));
+  }
+
+  await c.var.prisma.comments.deleteMany({ where: { parentId: comment.id } });
+  await c.var.prisma.comments.delete({ where: { id: comment.id } });
+  return c.json(ok({ deleted: true }));
 });
 
 Posts.get("/:id/highlights", authMiddleware, async (c) => {
@@ -413,6 +526,62 @@ Posts.put("/:id/private-note", authMiddleware, async (c) => {
   });
 
   return c.json(ok({ note }));
+});
+
+Posts.delete("/:id/private-note", authMiddleware, async (c) => {
+  await c.var.prisma.privateNotes.deleteMany({
+    where: { userId: c.get("userId"), postId: c.req.param("id") },
+  });
+
+  return c.json(ok({ deleted: true }));
+});
+
+Posts.get("/:id/series-context", async (c) => {
+  const links = await c.var.prisma.seriesPosts.findMany({
+    where: {
+      postId: c.req.param("id"),
+      series: { visibility: "PUBLIC" },
+    },
+    include: {
+      series: {
+        include: {
+          posts: {
+            orderBy: { order: "asc" },
+            include: {
+              post: {
+                select: {
+                  id: true,
+                  title: true,
+                  slug: true,
+                  subTitle: true,
+                  readingTime: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const contexts = links.map((link) => {
+    const index = link.series.posts.findIndex((item) => item.postId === link.postId);
+    return {
+      series: {
+        id: link.series.id,
+        title: link.series.title,
+        slug: link.series.slug,
+      },
+      previous: index > 0 ? link.series.posts[index - 1].post : null,
+      next: index >= 0 && index < link.series.posts.length - 1 ? link.series.posts[index + 1].post : null,
+      progress: {
+        current: index + 1,
+        total: link.series.posts.length,
+      },
+    };
+  });
+
+  return c.json(ok({ contexts }));
 });
 
 Posts.get("/:slug", async (c) => {

@@ -87,7 +87,7 @@ UsersRoute.put("/me/profile", authMiddleware, async (c) => {
 UsersRoute.post("/:userName/follow", authMiddleware, async (c) => {
   const target = await c.var.prisma.users.findUnique({
     where: { userName: c.req.param("userName") },
-    select: { id: true },
+    select: { id: true, userName: true },
   });
 
   if (!target || target.id === c.get("userId")) {
@@ -99,6 +99,15 @@ UsersRoute.post("/:userName/follow", authMiddleware, async (c) => {
     where: { followerId_followingId: { followerId: c.get("userId"), followingId: target.id } },
     update: {},
     create: { followerId: c.get("userId"), followingId: target.id },
+  });
+
+  await c.var.prisma.notifications.create({
+    data: {
+      userId: target.id,
+      actorId: c.get("userId"),
+      type: "FOLLOW",
+      message: `Someone followed @${target.userName}.`,
+    },
   });
 
   return c.json(ok({ following: true }));
