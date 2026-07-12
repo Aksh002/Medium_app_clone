@@ -48,6 +48,7 @@ export type Comment = {
   content: string;
   createdAt: string;
   author: Pick<User, "userName" | "firstName" | "avatarUrl">;
+  authorId?: string;
   replies?: Comment[];
 };
 
@@ -79,15 +80,99 @@ export type Challenge = {
   description: string;
   durationDays: number;
   promptTemplate: string;
-  entries?: unknown[];
+  entries?: ChallengeEntry[];
   _count?: { entries: number };
 };
 
+export type Highlight = {
+  id: string;
+  selectedText: string;
+  note?: string | null;
+  createdAt: string;
+  post?: Pick<Post, "title" | "slug">;
+};
+
+export type PrivateNote = {
+  id: string;
+  content: string;
+  updatedAt: string;
+  post?: Pick<Post, "title" | "slug">;
+};
+
+export type ReadingHistoryItem = {
+  id: string;
+  progress: number;
+  lastReadAt: string;
+  post: Pick<Post, "title" | "slug" | "readingTime">;
+};
+
 export type Library = {
-  bookmarks: unknown[];
-  highlights: unknown[];
-  notes: unknown[];
-  history: unknown[];
+  bookmarks: { id: string; post: Post; createdAt: string }[];
+  highlights: Highlight[];
+  notes: PrivateNote[];
+  history: ReadingHistoryItem[];
+};
+
+export type Notification = {
+  id: string;
+  type: "LIKE" | "BOOKMARK" | "COMMENT" | "FOLLOW" | "REVISION";
+  message: string;
+  read: boolean;
+  createdAt: string;
+  postId?: string | null;
+};
+
+export type WriterAnalytics = {
+  summary: {
+    posts: number;
+    published: number;
+    drafts: number;
+    reads: number;
+    completionRate: number;
+    saves: number;
+    comments: number;
+  };
+  mostReadPosts: {
+    id: string;
+    title: string;
+    slug: string;
+    reads: number;
+    likes: number;
+    bookmarks: number;
+    comments: number;
+  }[];
+  updateCandidates: {
+    id: string;
+    title: string;
+    slug: string;
+    updatedAt: string;
+    reads: number;
+  }[];
+};
+
+export type AiSuggestion = {
+  id: string;
+  kind: string;
+  output: string;
+  accepted: boolean;
+  createdAt: string;
+};
+
+export type SeriesContext = {
+  series: Pick<Series, "id" | "title" | "slug">;
+  previous: Pick<Post, "id" | "title" | "slug" | "subTitle" | "readingTime"> | null;
+  next: Pick<Post, "id" | "title" | "slug" | "subTitle" | "readingTime"> | null;
+  progress: {
+    current: number;
+    total: number;
+  };
+};
+
+export type ChallengeEntry = {
+  id: string;
+  dayNumber: number;
+  createdAt: string;
+  post?: Pick<Post, "title" | "slug"> | null;
 };
 
 export type PostInput = {
